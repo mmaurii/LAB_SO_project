@@ -1,3 +1,5 @@
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Scanner;
 
 public class Subscriber extends Client implements Runnable {
@@ -35,11 +37,11 @@ public class Subscriber extends Client implements Runnable {
      * Elenca tutti i messaggi inviati sul proprio topic.
      * @return String[] contenente tutti i messaggi ordinati dal primo all'ultimo
      */
-    public String[] listall(){
-        String[] allMessages;
-
-        return allMessages;
-    }
+//    public String[] listall(){
+//        String[] allMessages;
+//
+//        return allMessages;
+//    }
 
     @Override
     public void run() {
@@ -51,21 +53,48 @@ public class Subscriber extends Client implements Runnable {
          * messaggi e uno per leggerli
          *
          */
-        Thread sender = new Thread(new Sender(socket));
-        Thread receiver = new Thread(new Receiver(socket, sender));
-//        Scanner scan = new Scanner(System.in);
-//        String command = scan.next(); //bloccante? si credo
-//
-//        switch (command){
-//            case listall:
-//                String[] allMessages = listall();
-//                printAllMessages(allMessages);
-//                break;
-//            case quit:
-//                //chiudi il client
-//                break;
-//        }
+//        Thread sender = new Thread(new Sender(this.socket));
+        Thread receiver = new Thread(new Receiver(this.socket));//sender, il server va definito
+        receiver.start();
 
+        Scanner userInput = new Scanner(System.in);
+
+        try {
+            PrintWriter to = new PrintWriter(this.socket.getOutputStream(), true);
+            Boolean exit = false;
+            while (!exit) {
+                String request = userInput.nextLine();
+                /*
+                 * se il thread è stato interrotto mentre leggevamo l'input da tastiera, inviamo
+                 * "quit" al server e usciamo
+                 */
+                if (Thread.interrupted()) {
+                    to.println("quit");
+                    break;
+                }
+                /* in caso contrario proseguiamo e analizziamo l'input inserito
+                *  verificando il comando impartito
+                */
+                switch (request){
+                    case listall:
+                        to.println(request);
+//                        String[] allMessages = listall();
+//                        printAllMessages(allMessages);
+                        break;
+                    case quit:
+                        //chiudi il client
+                        exit = true;
+                        to.println(request);
+                        break;
+                }
+            }
+            System.out.println("Sender closed.");
+        } catch (IOException e) {
+            System.err.println("IOException caught: " + e);
+            e.printStackTrace();
+        } finally {
+            userInput.close();
+        }
     }
 
     private void printAllMessages(String[] allMessages) {

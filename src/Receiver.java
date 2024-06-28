@@ -5,20 +5,19 @@ import java.util.Scanner;
 public class Receiver implements Runnable {
 
     Socket s;
-    Thread sender;
 
-    public Receiver(Socket s, Thread sender) {
+    public Receiver(Socket s) {
         this.s = s;
-        this.sender = sender;
     }
 
     @Override
     public void run() {
         try {
             Scanner from = new Scanner(this.s.getInputStream());
+            System.out.println("Messaggi:");
             while (true) {
                 String response = from.nextLine();
-                System.out.println("Received: " + response);
+                System.out.println(response);
                 if (response.equals("quit")) {
                     break;
                 }
@@ -29,7 +28,6 @@ public class Receiver implements Runnable {
             e.printStackTrace();
         } finally {
             System.out.println("Receiver closed.");
-            this.sender.interrupt();
         }
     }
 }
