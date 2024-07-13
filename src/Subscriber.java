@@ -9,6 +9,7 @@ public class Subscriber extends Client implements Runnable {
     /**
      * Inizializza un Subscriber, prendendo in input i parametri per iniziare
      * il client.
+     *
      * @param host
      * @param port
      */
@@ -18,6 +19,7 @@ public class Subscriber extends Client implements Runnable {
 
     /**
      * Iscrive il subsriber al topic specificato nel momento dell'inizializzazione
+     *
      * @param topic a cui si verrà iscritti
      */
     public void subscribe(Topic topic) {
@@ -35,6 +37,7 @@ public class Subscriber extends Client implements Runnable {
 
     /**
      * Elenca tutti i messaggi inviati sul proprio topic.
+     *
      * @return String[] contenente tutti i messaggi ordinati dal primo all'ultimo
      */
 //    public String[] listall(){
@@ -42,7 +45,6 @@ public class Subscriber extends Client implements Runnable {
 //
 //        return allMessages;
 //    }
-
     @Override
     public void run() {
         //deve continuamente ad ascoltare che non ci siano nuovi comandi impartiti e restituire i messaggi
@@ -73,9 +75,9 @@ public class Subscriber extends Client implements Runnable {
                     break;
                 }
                 /* in caso contrario proseguiamo e analizziamo l'input inserito
-                *  verificando il comando impartito
-                */
-                switch (request){
+                 *  verificando il comando impartito
+                 */
+                switch (request) {
                     case listall:
                         to.println(request);
 //                        String[] allMessages = listall();

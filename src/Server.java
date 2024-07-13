@@ -13,61 +13,71 @@ public class Server implements Runnable {
 
     public static void main(String[] args) {
         Server server = new Server();
-        // valori iniziali temporanei
+        // Valori temporanei
         server.insertMessage(new Topic("cibo"));
         server.insertMessage(new Topic("musica"));
         server.insertMessage(new Topic("sport"));
-        // modificare per accettare input da linea di comando
-        server.create(9000);
+
+        Thread serverThread = new Thread(server);
+        serverThread.start();
+
+        server.loop();
     }
+
     /**
-     * Inizalizza il server
-     * @param port porta sulla quale viene aperto il server
+     * Loop principale per il thread in ascolto dei comandi (main thread)
      */
-    public void create(int port) {
+    private void loop() {
+        Scanner input = new Scanner(System.in);
+        while (running) {
+            if (inspectedTopic == null) System.out.println("\n> Inserisci comando");
+            else System.out.println("Inserisci comando (ispezionando " + inspectedTopic.getTitle() + ")");
+            String command = input.nextLine();
+            String[] parts = command.split(" ");
+            if (inspectedTopic == null) {
+                if (parts.length == 1) notInspecting(parts[0], null);
+                if (parts.length == 2) notInspecting(parts[0], parts[1]);
+            } else {
+                if (parts.length == 1) inspecting(parts[0], null);
+                if (parts.length == 2) inspecting(parts[0], parts[1]);
+            }
+        }
+    }
+
+    /**
+     * Funzione eseguita quando viene avviato il thread
+     */
+    @Override
+    public void run() {
+        create(9000);
+    }
+
+    /**
+     * Avvio del server thread, in attesa di connessioni dai client
+     *
+     * @param port porta del server
+     */
+    private void create(int port) {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Server avviato");
-            this.run();
-            // loop principale per accettare client
+
             while (running) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
+
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    /**
-     * Funzione eseguita quando viene avviato il thread
-     *
-     */
-    @Override
-    public void run() {
-        Scanner input = new Scanner(System.in);
-        while (running) {
-            if (inspectedTopic==null) System.out.println("\n> Inserisci comando");
-            else System.out.println("Inserisci comando (ispezionando "+ inspectedTopic.getTitle()+ ")" );
-            // analizza il comando
-            String command = input.nextLine();
-            String[] parts = command.split(" ");
-            // non si sta ispezionando un topic
-            if (inspectedTopic==null) {
-                if(parts.length==1) notInspecting(parts[0], null);
-                if(parts.length==2) notInspecting(parts[0], parts[1]);
-            }
-            // si sta ispezionando un topic
-            else {
-                if(parts.length==1) inspecting(parts[0], null);
-                if(parts.length==2) inspecting(parts[0], parts[1]);
-            }
-        }
-    }
+
     /**
      * Comandi per quando non si sta ispezionando un topic
-     * @param command comando, prima parte del input utente
+     *
+     * @param command   comando, prima parte del input utente
      * @param parameter valore per i comandi che hanno parametri
      */
-    public void notInspecting(String command, String parameter){
+    private void notInspecting(String command, String parameter) {
         switch (command) {
             case "quit" -> quit();
             case "show" -> show();
@@ -75,12 +85,14 @@ public class Server implements Runnable {
             default -> System.err.println("Comando non riconosciuto: " + command);
         }
     }
+
     /**
      * Comandi per quando si sta ispezionando un topic
-     * @param command comando, prima parte del input utente
+     *
+     * @param command   comando, prima parte del input utente
      * @param parameter valore per i comandi che hanno parametri
      */
-    public void inspecting(String command, String parameter){
+    private void inspecting(String command, String parameter) {
         switch (command) {
             case "listall" -> listAll();
             case "end" -> end();
@@ -92,8 +104,8 @@ public class Server implements Runnable {
     /**
      * Rimuove tutti i client connessi e arresta il server
      */
-    public void quit(){
-        for(Client c : clients){
+    private void quit() {
+        for (Client c : clients) {
             c.disconnect();
         }
         running = false;
@@ -102,60 +114,73 @@ public class Server implements Runnable {
     /**
      * Mostra i topic, se ce ne sono
      */
-    public void show(){
-        if(topics.isEmpty()) System.err.println("Non sono presenti topic");
-        else{
-            System.out.println("Topics:");
-            for(Topic t : topics){
-                System.out.println("\t"+t.getTitle());
+    private void show() {
+        if (topics.isEmpty()) System.err.println("Non sono presenti topic");
+        else {
+            System.out.println("Topic:");
+            for (Topic t : topics) {
+                System.out.println("\t" + t.getTitle());
             }
         }
     }
 
     /**
-     * imposta il topic ispezionato se è presente
-     * @param parameter topic che si vuole ispezionare
+     * Imposta il topic ispezionato se è presente
+     *
+     * @param topic topic che si vuole ispezionare
      */
-    public void inspect(String parameter){
-        if(parameter==null){System.err.println("Inserisci topic da ispezionare");}
-        else {
-            for(Topic t: topics){
-                if(Objects.equals(t.getTitle(), parameter)){
-                    inspectedTopic = t;
-                    break;
-                }
-            }
-            if(inspectedTopic==null)System.err.println("Topic "+ parameter+ " non esiste");
+    private void inspect(String topic) {
+        if (topic == null) {
+            System.err.println("Inserisci topic da ispezionare");
+        } else {
+            inspectedTopic = getTopicFromTitle(topic);
+            if (inspectedTopic == null) System.err.println("Topic " + topic + " non esiste");
         }
+    }
+
+    /**
+     * Restituisce il topic dato il titolo
+     *
+     * @param title titolo del topic da restituire
+     * @return Topic
+     */
+    private Topic getTopicFromTitle(String title) {
+        for (Topic t : topics) {
+            if (Objects.equals(t.getTitle(), title)) {
+                return t;
+            }
+        }
+        return null;
     }
 
     /**
      * Elenca i messaggi in un topic, se ce ne sono
      */
-    public void listAll(){
+    public void listAll() {
         ArrayList<Message> messages = inspectedTopic.getMessages();
-        if(messages.isEmpty()){
+        if (messages.isEmpty()) {
             System.err.println("Non ci sono messaggi");
-        }
-        else{
+        } else {
             System.out.println("Messaggi:");
-            for(Message m : inspectedTopic.getMessages()){
-                System.out.println("\t"+m.getText());
+            for (Message m : inspectedTopic.getMessages()) {
+                System.out.println("\t" + m.getText());
             }
         }
     }
+
     /**
      * Termina la sessione interattiva
      */
-    public void end(){
+    public void end() {
         inspectedTopic = null;
     }
 
     /**
      * Cancella messaggi dal topic ispezionato
+     *
      * @param id ID del messaggio che si vuole cancellare
      */
-    public void delete(int id){
+    private void delete(int id) {
         // da cambiare in base a come decidiamo di fare l'id
         ArrayList<Message> messages = inspectedTopic.getMessages();
         int initialSize = messages.size();
@@ -163,14 +188,42 @@ public class Server implements Runnable {
         // sicurezza un elemento da una lista se soddisfa una condizione
         messages.removeIf(m -> m.getID() == id);
         // confronto le dimensioni della lista per capire se è stato cancellato un elemento
-        if(initialSize==messages.size()){
-            System.err.println("Messaggio con id "+id+" non esiste");
-        }
-        else System.out.println("Messaggio eliminato");
+        if (initialSize == messages.size()) {
+            System.err.println("Messaggio con id " + id + " non esiste");
+        } else System.out.println("Messaggio eliminato");
 
     }
+
     // funzione temporanea
-    public void insertMessage(Topic topic){
+    public void insertMessage(Topic topic) {
         topics.add(topic);
     }
+
+
+
+    // funzione da testare col publisher
+    /**
+     * Ricezione messaggi dai Publisher
+     *
+     * @param publisher publisher che ha inviato il comando
+     * @param command   string inviata dal publisher
+     */
+    public void receiveMessage(Publisher publisher, String command) {
+        String topicTitle = publisher.getTopic().getTitle();
+        String[] parts = command.split(" ", 2);
+        String message = parts[1];
+
+        for (Topic topic : topics) {
+            if (topic.getTitle().equals(topicTitle)) {
+                // Se c'è il topic aggiungo il messaggio alla lista
+                topic.addMessage(message);
+                return;
+            }
+        }
+        // Se non c'è il topic, aggiungo un nuovo topic
+        Topic t = new Topic(topicTitle);
+        t.addMessage(message);
+        topics.add(t);
+    }
+
 }
