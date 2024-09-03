@@ -38,19 +38,49 @@ public class Server implements Runnable {
             }
             String command = input.nextLine();
             String[] parts = command.split(" ");
+
             if (inspectedTopic == null) {
-                switch (parts.length) {
-                    case 1 -> notInspecting(parts[0], null);
-                    case 2 -> notInspecting(parts[0], parts[1]);
-                }
+                notInspecting(parts,command);
             } else {
-                switch (parts.length) {
-                    case 1 -> inspecting(parts[0], null);
-                    case 2 -> inspecting(parts[0], parts[1]);
-                }
+                inspecting(parts,command);
             }
         }
-        System.out.println("command listener");
+    }
+
+    /**
+     * Gestione comandi default
+     *
+     * @param command comando diviso
+     * @param commandString comando iniziale
+     */
+    private void notInspecting(String[] command, String commandString){
+        if (command.length == 1 && Objects.equals(command[0], "quit")) {
+            quit();
+        } else if (command.length == 1 && Objects.equals(command[0], "show")) {
+            show();
+        } else if (command.length == 2 && Objects.equals(command[0], "inspect")) {
+            inspect(command[1]);
+        } else {
+            System.err.printf("Comando non riconosciuto: %s\n", commandString);
+        }
+    }
+
+    /**
+     * Gestione comandi sessione interattiva
+     *
+     * @param command comando diviso
+     * @param commandString comando iniziale
+     */
+    private void inspecting(String[] command, String commandString){
+        if (command.length == 1 && Objects.equals(command[0], "listall")) {
+            listAll();
+        } else if (command.length == 1 && Objects.equals(command[0], "end")) {
+            end();
+        } else if (command.length == 2 && Objects.equals(command[0], "delete")) {
+            delete(Integer.parseInt(command[1]));
+        } else {
+            System.err.printf("Comando non riconosciuto: %s\n", commandString);
+        }
     }
 
     /**
@@ -76,36 +106,6 @@ public class Server implements Runnable {
             }
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    /**
-     * Comandi per quando non si sta ispezionando un topic
-     *
-     * @param command   comando, prima parte del input utente
-     * @param parameter valore per i comandi che hanno parametri
-     */
-    private void notInspecting(String command, String parameter) {
-        switch (command) {
-            case "quit" -> quit();
-            case "show" -> show();
-            case "inspect" -> inspect(parameter);
-            default -> System.err.println("Comando non riconosciuto: " + command);
-        }
-    }
-
-    /**
-     * Comandi per quando si sta ispezionando un topic
-     *
-     * @param command   comando, prima parte del input utente
-     * @param parameter valore per i comandi che hanno parametri
-     */
-    private void inspecting(String command, String parameter) {
-        switch (command) {
-            case "listall" -> listAll();
-            case "end" -> end();
-            case "delete" -> delete(Integer.parseInt(parameter));
-            default -> System.err.println("Comando non riconosciuto: " + command);
         }
     }
 
