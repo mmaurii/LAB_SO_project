@@ -30,18 +30,27 @@ public class Server implements Runnable {
     private void loop() {
         Scanner input = new Scanner(System.in);
         while (running) {
-            if (inspectedTopic == null) System.out.println("\n> Inserisci comando");
-            else System.out.println("Inserisci comando (ispezionando " + inspectedTopic.getTitle() + ")");
+            if (inspectedTopic == null) {
+                System.out.println("\n> Inserisci comando");
+            } else {
+                System.out.println("Inserisci comando (ispezionando " +
+                        inspectedTopic.getTitle() + ")");
+            }
             String command = input.nextLine();
             String[] parts = command.split(" ");
             if (inspectedTopic == null) {
-                if (parts.length == 1) notInspecting(parts[0], null);
-                if (parts.length == 2) notInspecting(parts[0], parts[1]);
+                switch (parts.length) {
+                    case 1 -> notInspecting(parts[0], null);
+                    case 2 -> notInspecting(parts[0], parts[1]);
+                }
             } else {
-                if (parts.length == 1) inspecting(parts[0], null);
-                if (parts.length == 2) inspecting(parts[0], parts[1]);
+                switch (parts.length) {
+                    case 1 -> inspecting(parts[0], null);
+                    case 2 -> inspecting(parts[0], parts[1]);
+                }
             }
         }
+        System.out.println("command listener");
     }
 
     /**
@@ -53,7 +62,7 @@ public class Server implements Runnable {
     }
 
     /**
-     * Avvio del server thread, in attesa di connessioni dai client
+     * Avvio del server thread, resta in attesa di connessioni dai client
      *
      * @param port porta del server
      */
@@ -64,7 +73,6 @@ public class Server implements Runnable {
             while (running) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
-
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -109,14 +117,16 @@ public class Server implements Runnable {
             c.disconnect();
         }
         running = false;
+        System.exit(0);
     }
 
     /**
      * Mostra i topic, se ce ne sono
      */
     private void show() {
-        if (topics.isEmpty()) System.err.println("Non sono presenti topic");
-        else {
+        if (topics.isEmpty()) {
+            System.err.println("Non sono presenti topic");
+        } else {
             System.out.println("Topic:");
             for (Topic t : topics) {
                 System.out.println("\t" + t.getTitle());
@@ -134,7 +144,9 @@ public class Server implements Runnable {
             System.err.println("Inserisci topic da ispezionare");
         } else {
             inspectedTopic = getTopicFromTitle(topic);
-            if (inspectedTopic == null) System.err.println("Topic " + topic + " non esiste");
+            if (inspectedTopic == null) {
+                System.err.println("Topic " + topic + " non esiste");
+            }
         }
     }
 
@@ -190,8 +202,9 @@ public class Server implements Runnable {
         // confronto le dimensioni della lista per capire se è stato cancellato un elemento
         if (initialSize == messages.size()) {
             System.err.println("Messaggio con id " + id + " non esiste");
-        } else System.out.println("Messaggio eliminato");
-
+        } else {
+            System.out.println("Messaggio eliminato");
+        }
     }
 
     // funzione temporanea
@@ -199,9 +212,8 @@ public class Server implements Runnable {
         topics.add(topic);
     }
 
-
-
     // funzione da testare col publisher
+
     /**
      * Ricezione messaggi dai Publisher
      *
