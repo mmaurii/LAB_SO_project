@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.Scanner;
 
 public class Subscriber extends Client implements Runnable {
@@ -13,8 +14,12 @@ public class Subscriber extends Client implements Runnable {
      * @param host
      * @param port
      */
-    public Subscriber(String host, int port) {
-        //super(host, port);
+    public Subscriber(String host, int port) throws IOException {
+        super(host, port);
+    }
+
+    public Subscriber(Socket socket) throws IOException {
+        super(socket);
     }
 
     /**
@@ -80,7 +85,7 @@ public class Subscriber extends Client implements Runnable {
                 switch (request) {
                     case listall:
                         to.println(request);
-//                        String[] allMessages = listall();
+//                        String[] allMessages = listAll();
 //                        printAllMessages(allMessages);
                         break;
                     case quit:

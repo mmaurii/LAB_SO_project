@@ -10,8 +10,9 @@ public class Server implements Runnable {
     private final List<Client> clients = new ArrayList<>();
     private Topic inspectedTopic = null;
     private boolean running = true;
+    final int port;
 
-    public static void main(String[] args) {
+/*    public static void main(String[] args) {
         Server server = new Server();
         // Valori temporanei
         server.insertMessage(new Topic("cibo"));
@@ -20,8 +21,10 @@ public class Server implements Runnable {
 
         Thread serverThread = new Thread(server);
         serverThread.start();
+    }*/
 
-        server.loop();
+    public Server(int port) {
+        this.port = port;
     }
 
     /**
@@ -49,15 +52,14 @@ public class Server implements Runnable {
      */
     @Override
     public void run() {
-        create(9000);
+        create();
+        loop();
     }
 
     /**
      * Avvio del server thread, in attesa di connessioni dai client
-     *
-     * @param port porta del server
      */
-    private void create(int port) {
+    private void create() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Server avviato");
 
@@ -200,8 +202,8 @@ public class Server implements Runnable {
     }
 
 
-
     // funzione da testare col publisher
+
     /**
      * Ricezione messaggi dai Publisher
      *
