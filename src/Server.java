@@ -12,25 +12,19 @@ public class Server implements Runnable {
     private boolean running = true;
     final int port;
 
-/*    public static void main(String[] args) {
-        Server server = new Server();
-        // Valori temporanei
-        server.insertMessage(new Topic("cibo"));
-        server.insertMessage(new Topic("musica"));
-        server.insertMessage(new Topic("sport"));
-
-        Thread serverThread = new Thread(server);
-        serverThread.start();
-    }*/
 
     public Server(int port) {
         this.port = port;
+        Thread serverThread = new Thread(this);
+        serverThread.start();
+        this.commandLoop();
+
     }
 
     /**
      * Loop principale per il thread in ascolto dei comandi (main thread)
      */
-    private void loop() {
+    private void commandLoop() {
         Scanner input = new Scanner(System.in);
         while (running) {
             if (inspectedTopic == null) System.out.println("\n> Inserisci comando");
@@ -53,7 +47,6 @@ public class Server implements Runnable {
     @Override
     public void run() {
         create();
-        loop();
     }
 
     /**
