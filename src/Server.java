@@ -85,16 +85,6 @@ public class Server implements Runnable {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        System.out.println("Interruzione dei client connessi");
-        for (Thread client : this.clients) {
-            System.out.println("Interruzione client " + client);
-            /*
-             * client.interrupt() non è bloccante; una volta inviato il segnale
-             * di interruzione proseguiamo con l'esecuzione, senza aspettare che "child"
-             * termini
-             */
-            client.interrupt();
-        }
     }
 
     /**
@@ -132,6 +122,16 @@ public class Server implements Runnable {
      */
     private void quit() {
         running = false;
+        System.out.println("Interruzione dei client connessi");
+        for (Thread client : this.clients) {
+            System.out.println("Interruzione client " + client);
+            /*
+             * client.interrupt() non è bloccante; una volta inviato il segnale
+             * di interruzione proseguiamo con l'esecuzione, senza aspettare che "child"
+             * termini
+             */
+            client.interrupt();
+        }
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
