@@ -34,10 +34,10 @@ public class ClientHandler implements Runnable {
                 }
 
                 // Controllo input da parte del client
-
-                String request = clientMessage.nextLine();
-                System.out.println("Request: " + request);
-                String[] parts = request.split(" ");
+//                if (clientMessage.hasNextLine()) {
+                    String request = clientMessage.nextLine();
+                    System.out.println("Request: " + request);
+                    String[] parts = request.split(" ");
 
                 switch (parts[0]) {
                     case "quit":
@@ -54,11 +54,11 @@ public class ClientHandler implements Runnable {
                         }
                         break;
 
-                    default:
-                        clientReply.println("Comando sconosciuto");
-                        break;
-                }
-
+                        default:
+                            clientReply.println("Comando sconosciuto");
+                            break;
+                    }
+//                }
             }
 
         } catch (IOException e) {

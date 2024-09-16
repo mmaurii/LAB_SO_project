@@ -29,7 +29,7 @@ public class Client {
              */
             PrintWriter to = new PrintWriter(this.socket.getOutputStream(), true);
             to.println(command);
-            to.close();
+//            to.close();
         } catch (IOException e) {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();
@@ -50,77 +50,23 @@ public class Client {
         }
     }
 
-    public void disconnect() {
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Client waitingForCommands() {
+    public void waitingForCommands() {
         while (running) {
             Scanner scanner = new Scanner(System.in);
-            String command = scanner.nextLine();
+            String message = scanner.nextLine();
 
-            if (command.equals(quit)) {
-                running = false;
-                break;
-            } else if (command.equals(show)) {
-                show();
-            } else if (command.split(" ")[0].equals(publisher)) {
-                running = false;
-                String parameter;
+            if (message.equals(quit)) {
+                send(message);
                 try {
-                    parameter = command.substring(command.indexOf(' ') + 1);
-                } catch (IndexOutOfBoundsException e) {
-                    System.out.println("No such parameter for: " + command + "\nRequired: publisher topic");
-                    break;
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                return publisher(parameter);
-            } else if (command.split(" ")[0].equals(subscriber)) {
                 running = false;
-                String parameter;
-                try {
-                    parameter = command.substring(command.indexOf(' ') + 1);
-                } catch (IndexOutOfBoundsException e) {
-                    System.out.println("No such parameter for: " + command + "\nRequired: publisher topic");
-                    break;
-                }
-                return subscriber(parameter);
+            } else {
+                send(message);
+                recive();
             }
         }
-        return null;
-    }
-
-    private Subscriber subscriber(String parameter) {
-        send(subscriber);
-        recive();
-        Subscriber subscriber = null;
-
-        try {
-            subscriber = new Subscriber(socket, parameter);
-        } catch (IOException e) {
-            System.err.println("IOException caught: " + e);
-            e.printStackTrace();
-        }
-        return subscriber;
-    }
-
-    private Publisher publisher(String topicTitle) {
-
-        send(publisher);
-        recive();
-        Publisher publisher = null;
-
-        Topic topic = new Topic(topicTitle);
-        publisher = new Publisher(socket, topic);
-
-        return publisher;
-    }
-
-    private void show() {
-        send(show);
-        recive();
     }
 }
