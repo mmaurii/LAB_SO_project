@@ -29,7 +29,7 @@ public class Client {
              */
             PrintWriter to = new PrintWriter(this.socket.getOutputStream(), true);
             to.println(command);
-            to.close();
+//            to.close();
         } catch (IOException e) {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();
