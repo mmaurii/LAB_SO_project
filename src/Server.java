@@ -1,5 +1,7 @@
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.*;
 
 /**
@@ -11,6 +13,7 @@ public class Server implements Runnable {
     private Topic inspectedTopic = null;
     private boolean running = true;
     final int port;
+    private ServerSocket serverSocket = null;
 
 
     public Server(int port) {
@@ -53,17 +56,29 @@ public class Server implements Runnable {
      * Avvio del server thread, in attesa di connessioni dai client
      */
     private void create() {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
+        try {
+            serverSocket = new ServerSocket(port);
             System.out.println("Server avviato");
-
             while (running) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
-
+                try {
+                    awaitClient();
+                } catch (SocketException e) {
+                    if (!running) {
+                        System.out.println("Server arrestato.");
+                        break;
+                    } else {
+                        e.printStackTrace();
+                    }
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
+    }
+
+    private void awaitClient() throws IOException {
+        Socket clientSocket = serverSocket.accept();
+        System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
     }
 
     /**
@@ -104,6 +119,13 @@ public class Server implements Runnable {
             c.disconnect();
         }
         running = false;
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
