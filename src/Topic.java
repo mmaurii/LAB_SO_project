@@ -23,6 +23,6 @@ public class Topic {
 
     public void addMessage(String message) {
         maxMessageID += 1;
-        messages.add(new Message(message, maxMessageID));
+        messages.add(new Message(message));
     }
 }

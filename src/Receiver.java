@@ -2,18 +2,15 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class Receiver implements Runnable {
-
-    Socket s;
-
+public class Receiver extends Client implements Runnable {
     public Receiver(Socket s) {
-        this.s = s;
+        super(s);
     }
 
     @Override
-    public void run() {
+    synchronized public void run() {
         try {
-            Scanner from = new Scanner(this.s.getInputStream());
+            Scanner from = new Scanner(this.socket.getInputStream());
             System.out.println("Messaggi:");
             while (true) {
                 String response = from.nextLine();
