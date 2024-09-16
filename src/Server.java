@@ -9,7 +9,7 @@ import java.util.*;
  */
 public class Server implements Runnable {
     private final List<Topic> topics = new ArrayList<>();
-    private final List<Client> clients = new ArrayList<>();
+    private final List<Thread> clients = new ArrayList<>();
     private Topic inspectedTopic = null;
     private boolean running = true;
     final int port;
@@ -61,7 +61,17 @@ public class Server implements Runnable {
             System.out.println("Server avviato");
             while (running) {
                 try {
-                    awaitClient();
+                    Socket clientSocket = serverSocket.accept();
+                    System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
+                    if (!Thread.interrupted()) {
+                        // crea un nuovo thread per il nuovo socket
+                        Thread handlerThread = new Thread(new ClientHandler(clientSocket));
+                        handlerThread.start();
+                        this.clients.add(handlerThread);
+                    } else {
+                        serverSocket.close();
+                        break;
+                    }
                 } catch (SocketException e) {
                     if (!running) {
                         System.out.println("Server arrestato.");
@@ -71,14 +81,20 @@ public class Server implements Runnable {
                     }
                 }
             }
+            this.serverSocket.close();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-    }
-
-    private void awaitClient() throws IOException {
-        Socket clientSocket = serverSocket.accept();
-        System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
+        System.out.println("Interruzione dei client connessi");
+        for (Thread client : this.clients) {
+            System.out.println("Interruzione client " + client);
+            /*
+             * client.interrupt() non è bloccante; una volta inviato il segnale
+             * di interruzione proseguiamo con l'esecuzione, senza aspettare che "child"
+             * termini
+             */
+            client.interrupt();
+        }
     }
 
     /**
@@ -115,9 +131,6 @@ public class Server implements Runnable {
      * Rimuove tutti i client connessi e arresta il server
      */
     private void quit() {
-        for (Client c : clients) {
-            c.disconnect();
-        }
         running = false;
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
