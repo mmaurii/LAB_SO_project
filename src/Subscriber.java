@@ -51,7 +51,7 @@ public class Subscriber extends Client implements Runnable {
 //        return allMessages;
 //    }
     @Override
-    public void run() {
+    synchronized public void run() {
         //deve continuamente ad ascoltare che non ci siano nuovi comandi impartiti e restituire i messaggi
         //che vengono inviati al suo topic, lo dovrebbe fare tramite due thread paralleli e indipendenti
 

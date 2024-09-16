@@ -20,7 +20,7 @@ public class Client {
         this.socket = socket;
     }
 
-    private void sender(String command) {
+    protected void send(String command) {
         try {
             /*
              * Delega la gestione di input/output a due thread separati, uno per inviare
@@ -30,8 +30,16 @@ public class Client {
             PrintWriter to = new PrintWriter(this.socket.getOutputStream(), true);
             to.println(command);
             to.close();
+        } catch (IOException e) {
+            System.err.println("IOException caught: " + e);
+            e.printStackTrace();
+        }
+    }
 
-            Scanner from = new Scanner(this.socket.getInputStream());
+    protected void recive() {
+        Scanner from = null;
+        try {
+            from = new Scanner(this.socket.getInputStream());
 
             while (from.hasNextLine()) {
                 System.out.println(from.nextLine());
@@ -50,12 +58,13 @@ public class Client {
         }
     }
 
-    public void waitingForCommands() {
+    public Client waitingForCommands() {
         while (running) {
             Scanner scanner = new Scanner(System.in);
             String command = scanner.nextLine();
 
-            switch (command) {
+            String workingCommand = command.substring(0, command.indexOf(' '));
+            switch (workingCommand) {
                 case quit:
                     running = false;
                     break;
@@ -63,24 +72,51 @@ public class Client {
                     show();
                     break;
                 case publisher:
-                    publisher();
-                    break;
+                    running = false;
+                    String parameter;
+                    try {
+                        parameter = command.substring(command.indexOf(' ') + 1);
+                    } catch (IndexOutOfBoundsException e) {
+                        System.out.println("No such parameter for: " + command + "\nRequired: publisher topic");
+                        break;
+                    }
+                    return publisher(parameter);
                 case subscriber:
-                    subscriber();
-                    break;
+                    running = false;
+                    return subscriber();
             }
         }
+        return null;
     }
 
-    private void subscriber() {
-        sender(subscriber);
+    private Subscriber subscriber() {
+        send(subscriber);
+        recive();
+        Subscriber subscriber = null;
+
+        try {
+            subscriber = new Subscriber(socket);
+        } catch (IOException e) {
+            System.err.println("IOException caught: " + e);
+            e.printStackTrace();
+        }
+        return subscriber;
     }
 
-    private void publisher() {
-        sender(publisher);
+    private Publisher publisher(String topicTitle) {
+
+        send(publisher);
+        recive();
+        Publisher publisher = null;
+
+            Topic topic = new Topic(topicTitle);
+            publisher = new Publisher(socket, topic);
+
+        return publisher;
     }
 
     private void show() {
-        sender(show);
+        send(show);
+        recive();
     }
 }

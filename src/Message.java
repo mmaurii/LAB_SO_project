@@ -3,29 +3,29 @@ import java.time.LocalDateTime;
 public class Message {
     private static int idCounter = 0;
     private int id;
-    private String testo;
-    private LocalDateTime dataInvio;
+    private String text;
+    private LocalDateTime sendDate;
 
-    public Messaggio(String testo) {
+    public Message(String text) {
         this.id = ++idCounter;
-        this.testo = testo;
-        this.dataInvio = LocalDateTime.now();
+        this.text = text;
+        this.sendDate = LocalDateTime.now();
     }
 
-    public int getId() {
+    public int getID() {
         return id;
     }
 
-    public String getTesto() {
-        return testo;
+    public String getText() {
+        return text;
     }
 
-    public LocalDateTime getDataInvio() {
-        return dataInvio;
+    public LocalDateTime getSendDate() {
+        return sendDate;
     }
 
     @Override
     public String toString() {
-        return "ID: " + id + "\nTesto: " + testo + "\nData: " + dataInvio;
+        return "ID: " + id + "\nTesto: " + text + "\nData: " + sendDate;
     }
 }
