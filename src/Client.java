@@ -63,39 +63,43 @@ public class Client {
             Scanner scanner = new Scanner(System.in);
             String command = scanner.nextLine();
 
-            String workingCommand = command.substring(0, command.indexOf(' '));
-            switch (workingCommand) {
-                case quit:
-                    running = false;
+            if (command.equals(quit)) {
+                running = false;
+                break;
+            } else if (command.equals(show)) {
+                show();
+            } else if (command.split(" ")[0].equals(publisher)) {
+                running = false;
+                String parameter;
+                try {
+                    parameter = command.substring(command.indexOf(' ') + 1);
+                } catch (IndexOutOfBoundsException e) {
+                    System.out.println("No such parameter for: " + command + "\nRequired: publisher topic");
                     break;
-                case show:
-                    show();
+                }
+                return publisher(parameter);
+            } else if (command.split(" ")[0].equals(subscriber)) {
+                running = false;
+                String parameter;
+                try {
+                    parameter = command.substring(command.indexOf(' ') + 1);
+                } catch (IndexOutOfBoundsException e) {
+                    System.out.println("No such parameter for: " + command + "\nRequired: publisher topic");
                     break;
-                case publisher:
-                    running = false;
-                    String parameter;
-                    try {
-                        parameter = command.substring(command.indexOf(' ') + 1);
-                    } catch (IndexOutOfBoundsException e) {
-                        System.out.println("No such parameter for: " + command + "\nRequired: publisher topic");
-                        break;
-                    }
-                    return publisher(parameter);
-                case subscriber:
-                    running = false;
-                    return subscriber();
+                }
+                return subscriber(parameter);
             }
         }
         return null;
     }
 
-    private Subscriber subscriber() {
+    private Subscriber subscriber(String parameter) {
         send(subscriber);
         recive();
         Subscriber subscriber = null;
 
         try {
-            subscriber = new Subscriber(socket);
+            subscriber = new Subscriber(socket, parameter);
         } catch (IOException e) {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();
@@ -109,8 +113,8 @@ public class Client {
         recive();
         Publisher publisher = null;
 
-            Topic topic = new Topic(topicTitle);
-            publisher = new Publisher(socket, topic);
+        Topic topic = new Topic(topicTitle);
+        publisher = new Publisher(socket, topic);
 
         return publisher;
     }

@@ -18,8 +18,9 @@ public class Subscriber extends Client implements Runnable {
         super(host, port);
     }
 
-    public Subscriber(Socket socket) throws IOException {
+    public Subscriber(Socket socket,String title) throws IOException {
         super(socket);
+        this.topic = new Topic(title);
     }
 
     /**
