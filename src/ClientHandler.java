@@ -34,31 +34,31 @@ public class ClientHandler implements Runnable {
                 }
 
                 // Controllo input da parte del client
-                if (clientMessage.hasNextLine()) {
-                    String request = clientMessage.nextLine();
-                    System.out.println("Request: " + request);
-                    String[] parts = request.split(" ");
 
-                    switch (parts[0]) {
-                        case "quit":
-                            closed = true;
-                            break;
+                String request = clientMessage.nextLine();
+                System.out.println("Request: " + request);
+                String[] parts = request.split(" ");
 
-                        case "info":
-                            if (parts.length > 1) {
-                                String key = parts[1];
-                                String res = response.getOrDefault(key, "Errore, no info");
-                                clientReply.println(res);
-                            } else {
-                                clientReply.println("Nessun parametro fornito");
-                            }
-                            break;
+                switch (parts[0]) {
+                    case "quit":
+                        closed = true;
+                        break;
 
-                        default:
-                            clientReply.println("Comando sconosciuto");
-                            break;
-                    }
+                    case "info":
+                        if (parts.length > 1) {
+                            String key = parts[1];
+                            String res = response.getOrDefault(key, "Errore, no info");
+                            clientReply.println(res);
+                        } else {
+                            clientReply.println("Nessun parametro fornito");
+                        }
+                        break;
+
+                    default:
+                        clientReply.println("Comando sconosciuto");
+                        break;
                 }
+
             }
 
         } catch (IOException e) {
