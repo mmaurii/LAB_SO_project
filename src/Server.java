@@ -10,6 +10,8 @@ import java.util.*;
 public class Server implements Runnable {
     private final List<Topic> topics = new ArrayList<>();
     private final List<Thread> clients = new ArrayList<>();
+    private Map<String, List<Message>> topics1; 
+    private Map<String, List<ClientHandler>> subscribers;
     private Topic inspectedTopic = null;
     private boolean running = true;
     final int port;
@@ -147,9 +149,9 @@ public class Server implements Runnable {
     private void show() {
         if (topics.isEmpty()) System.err.println("Non sono presenti topic");
         else {
-            System.out.println("Topic:");
+            System.out.println("Topics:");
             for (Topic t : topics) {
-                System.out.println("\t" + t.getTitle());
+                System.out.println("\t" + "- " + t.getTitle());
             }
         }
     }
@@ -193,7 +195,8 @@ public class Server implements Runnable {
         } else {
             System.out.println("Messaggi:");
             for (Message m : inspectedTopic.getMessages()) {
-                System.out.println("\t" + m.getText());
+                System.out.println("\t" + "- " + m.getID() + "\n" + "\t" + m.getText());
+
             }
         }
     }
@@ -224,36 +227,26 @@ public class Server implements Runnable {
 
     }
 
-    // funzione temporanea
-    public void insertMessage(Topic topic) {
-        topics.add(topic);
+     // Aggiunge un nuovo topic (se non esiste già)
+    public synchronized void addTopic(String topic) {
+        topics1.putIfAbsent(topic, new ArrayList<>());
+        subscribers.putIfAbsent(topic, new ArrayList<>());
     }
 
-
-    // funzione da testare col publisher
-
-    /**
-     * Ricezione messaggi dai Publisher
-     *
-     * @param publisher publisher che ha inviato il comando
-     * @param command   string inviata dal publisher
-     */
-    public void receiveMessage(Publisher publisher, String command) {
-        String topicTitle = publisher.getTopic().getTitle();
-        String[] parts = command.split(" ", 2);
-        String message = parts[1];
-
-        for (Topic topic : topics) {
-            if (topic.getTitle().equals(topicTitle)) {
-                // Se c'è il topic aggiungo il messaggio alla lista
-                topic.addMessage(message);
-                return;
-            }
+    // Aggiunge un messaggio a un topic
+    public synchronized void addMessageToTopic(String topic, Message message) {
+        List<Message> messages = topics1.get(topic); 
+        if (messages != null) {
+            messages.add(message);
+            notifySubscribers(topic, message); // Notifica i subscriber
         }
-        // Se non c'è il topic, aggiungo un nuovo topic
-        Topic t = new Topic(topicTitle);
-        t.addMessage(message);
-        topics.add(t);
     }
 
+    // Aggiunge un subscriber per un determinato topic
+    public synchronized void addSubscriber(ClientHandler client, String topic) {
+        List<ClientHandler> topicSubscribers = subscribers.get(topic);
+        if (topicSubscribers != null) {
+            topicSubscribers.add(client);
+        }
+    }
 }
