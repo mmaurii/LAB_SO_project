@@ -52,6 +52,10 @@ public class Server implements Runnable {
         create();
     }
 
+    public List<Topic> getTopics(){
+        return topics;
+    }
+
     /**
      * Avvio del server thread, in attesa di connessioni dai client
      */
@@ -65,7 +69,7 @@ public class Server implements Runnable {
                     System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
                     if (!Thread.interrupted()) {
                         // crea un nuovo thread per il nuovo socket
-                        Thread handlerThread = new Thread(new ClientHandler(clientSocket));
+                        Thread handlerThread = new Thread(new ClientHandler(clientSocket,this));
                         handlerThread.start();
                         this.clients.add(handlerThread);
                     } else {
