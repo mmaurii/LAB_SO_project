@@ -13,25 +13,6 @@ public class MainClient {
             throw new RuntimeException(e);
         }
 
-        Client c = client.waitingForCommands();
-
-
-        if (c instanceof Subscriber) {
-            Subscriber subscriber = (Subscriber) c;
-//            try {
-//                subscriber = new Subscriber(localHost,portNumber);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-            subscriber.run();
-        } else if (c instanceof Publisher) {
-            Publisher publisher = (Publisher) c;
-//            try {
-//                publisher = new Publisher(localHost,portNumber);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-            publisher.run();
-        }
+        client.waitingForCommands();
     }
 }

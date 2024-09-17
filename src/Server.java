@@ -232,32 +232,4 @@ public class Server implements Runnable {
     public void insertMessage(Topic topic) {
         topics.add(topic);
     }
-
-
-    // funzione da testare col publisher
-
-    /**
-     * Ricezione messaggi dai Publisher
-     *
-     * @param publisher publisher che ha inviato il comando
-     * @param command   string inviata dal publisher
-     */
-    public void receiveMessage(Publisher publisher, String command) {
-        String topicTitle = publisher.getTopic().getTitle();
-        String[] parts = command.split(" ", 2);
-        String message = parts[1];
-
-        for (Topic topic : topics) {
-            if (topic.getTitle().equals(topicTitle)) {
-                // Se c'è il topic aggiungo il messaggio alla lista
-                topic.addMessage(message);
-                return;
-            }
-        }
-        // Se non c'è il topic, aggiungo un nuovo topic
-        Topic t = new Topic(topicTitle);
-        t.addMessage(message);
-        topics.add(t);
-    }
-
 }
