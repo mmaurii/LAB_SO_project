@@ -10,7 +10,7 @@ import java.util.*;
 public class Server implements Runnable {
     private final List<Topic> topics = new ArrayList<>();
     private final List<Thread> clients = new ArrayList<>();
-    private Map<String, List<Message>> topics1; 
+    private Map<String, List<Message>> topics1;
     private Map<String, List<ClientHandler>> subscribers;
     private Topic inspectedTopic = null;
     private boolean running = true;
@@ -54,7 +54,7 @@ public class Server implements Runnable {
         create();
     }
 
-    public List<Topic> getTopics(){
+    public List<Topic> getTopics() {
         return topics;
     }
 
@@ -71,7 +71,7 @@ public class Server implements Runnable {
                     System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
                     if (!Thread.interrupted()) {
                         // crea un nuovo thread per il nuovo socket
-                        Thread handlerThread = new Thread(new ClientHandler(clientSocket,this));
+                        Thread handlerThread = new Thread(new ClientHandler(clientSocket, this));
                         handlerThread.start();
                         this.clients.add(handlerThread);
                     } else {
@@ -223,7 +223,9 @@ public class Server implements Runnable {
         int initialSize = messages.size();
         // Costrutto simile all'Iterator per rimuovere con
         // sicurezza un elemento da una lista se soddisfa una condizione
-        messages.removeIf(m -> m.getID() == id);
+        synchronized (messages) {
+            messages.removeIf(m -> m.getID() == id);
+        }
         // confronto le dimensioni della lista per capire se è stato cancellato un elemento
         if (initialSize == messages.size()) {
             System.err.println("Messaggio con id " + id + " non esiste");
@@ -231,7 +233,7 @@ public class Server implements Runnable {
 
     }
 
-     // Aggiunge un nuovo topic
+    // Aggiunge un nuovo topic
     public synchronized void addTopic(String topic) {
         topics1.putIfAbsent(topic, new ArrayList<>());
         subscribers.putIfAbsent(topic, new ArrayList<>());
@@ -239,11 +241,14 @@ public class Server implements Runnable {
 
     // Aggiunge un messaggio a un topic
     public synchronized void addMessageToTopic(String topic, Message message) {
-        List<Message> messages = topics1.get(topic); 
+        List<Message> messages = topics1.get(topic);
         if (messages != null) {
             messages.add(message);
             //notifySubscribers(topic, message); // Notifica i subscriber
         }
+    }
+
+    private void notifySubscribers(String topic, Message message) {
     }
 
     // Aggiunge un subscriber per un determinato topic

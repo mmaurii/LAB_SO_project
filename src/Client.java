@@ -45,9 +45,10 @@ public class Client {
                 return;
             }
 
-        } catch (IOException e) {
-            System.err.println("IOException caught: " + e);
-            e.printStackTrace();
+        } catch (IllegalArgumentException e){
+            System.out.println("Error: inserisci un numero di porta valido");
+        }catch (IOException e) {
+            System.out.println("Error: Il server è irraggiungibile provare cambiando host e port number");
         }
     }
 }

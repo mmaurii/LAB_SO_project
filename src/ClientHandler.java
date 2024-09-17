@@ -1,6 +1,8 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -47,7 +49,10 @@ public class ClientHandler implements Runnable {
                     case "publish" -> publish(parameter, clientReply);
                     case "subscribe" -> subscribe(parameter, clientReply);
                     case "show" -> show(clientReply);
-                    case "quit" -> quit(clientReply);
+                    case "quit" -> {
+                        running = false;
+                        clientReply.println("quit");
+                    }
 
                     case "send" -> send(parameter, clientReply);
                     case "list" -> list(clientReply);
@@ -95,11 +100,19 @@ public class ClientHandler implements Runnable {
     }
 
     private void show(PrintWriter reply) {
-        // funzionalità
-    }
+        List<Topic> lTopic = server.getTopics();
+        String output = "";
 
-    private void quit(PrintWriter reply) {
-        // funzionalità
+        if(!lTopic.isEmpty()) {
+            output = "Lista dei topic presenti:";
+            for (Topic t : lTopic) {
+                output += "\n\t- " + t.getTitle();
+            }
+        }else {
+            output = "non ci sono topic disponibili";
+        }
+
+        reply.println(output);
     }
 
     // 0 = publisher, 1 = subscriber
