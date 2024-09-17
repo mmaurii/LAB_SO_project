@@ -1,12 +1,15 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
     private Server server;
-    private Integer mode;
+    // 0 = publisher, 1 = subscriber
+    private Integer mode = null;
+    private Topic topic = null;
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
@@ -39,8 +42,19 @@ public class ClientHandler implements Runnable {
                     command = request.substring(0, request.indexOf(' '));
                     parameter = request.substring(request.indexOf(' ') + 1);
                 }
-                clientReply.printf("Command: %s, Parameter: %s\n", command, parameter);
+                System.out.println(command);
+                switch (command) {
+                    case "publish" -> publish(parameter, clientReply);
+                    case "subscribe" -> subscribe(parameter, clientReply);
+                    case "show" -> show(clientReply);
+                    case "quit" -> quit(clientReply);
 
+                    case "send" -> send(parameter, clientReply);
+                    case "list" -> list(clientReply);
+
+                    case "listall" -> listAll(clientReply);
+                    default -> clientReply.println("Comando invalido");
+                }
             }
 
         } catch (IOException e) {
@@ -55,5 +69,65 @@ public class ClientHandler implements Runnable {
                 System.err.println("Errore di chiusura socket: " + e.getMessage());
             }
         }
+    }
+
+    private void publish(String parameter, PrintWriter reply) {
+        if (mode == null && !Objects.equals(parameter, "")) {
+            reply.printf("Registrato publisher a topic %s\n", parameter);
+            mode = 0;
+            // <pubblicare il topic>
+
+            reply.printf("Pubblicato: %s\n", parameter);
+        } else {
+            reply.println("Comando invalido");
+        }
+    }
+
+    private void subscribe(String parameter, PrintWriter reply) {
+        if (mode == null && !Objects.equals(parameter, "")) {
+            reply.printf("Registrato subscriber a topic %s\n", parameter);
+            mode = 1;
+
+            reply.printf("Iscritto: %s\n", parameter);
+        } else {
+            reply.println("Comando invalido");
+        }
+    }
+
+    private void show(PrintWriter reply) {
+        // funzionalità
+    }
+
+    private void quit(PrintWriter reply) {
+        // funzionalità
+    }
+
+    // 0 = publisher, 1 = subscriber
+    private boolean isPublisherCommand(String command, PrintWriter reply) {
+        if (command.equals("send") && mode == 0) return true;
+        if (command.equals("list") && mode == 0) return true;
+
+        reply.println("Comando invalido");
+        return false;
+    }
+
+    private void send(String message, PrintWriter reply) {
+        if (isPublisherCommand("send", reply)) {
+            if (message.isEmpty()) {
+                reply.println("Manca il parametro");
+            } else {
+                // funzionalità
+            }
+        }
+    }
+
+    private void list(PrintWriter reply) {
+        if (isPublisherCommand("list", reply)) {
+            // funzionalità
+        }
+    }
+
+    private void listAll(PrintWriter reply) {
+        // funzionalità
     }
 }

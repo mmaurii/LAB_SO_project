@@ -242,7 +242,7 @@ public class Server implements Runnable {
         List<Message> messages = topics1.get(topic); 
         if (messages != null) {
             messages.add(message);
-            notifySubscribers(topic, message); // Notifica i subscriber
+            //notifySubscribers(topic, message); // Notifica i subscriber
         }
     }
 
