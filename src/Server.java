@@ -65,7 +65,7 @@ public class Server implements Runnable {
         try {
             serverSocket = new ServerSocket(port);
             System.out.println("Server avviato");
-            while (running) {
+            while (!Thread.interrupted()) {
                 try {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
