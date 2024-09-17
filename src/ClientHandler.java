@@ -39,8 +39,8 @@ public class ClientHandler implements Runnable {
                     command = request.substring(0, request.indexOf(' '));
                     parameter = request.substring(request.indexOf(' ') + 1);
                 }
-                //utilizzare println se no non va
-                clientReply.println(command + " " + parameter);
+                clientReply.printf("Command: %s, Parameter: %s", command, parameter);
+
             }
 
         } catch (IOException e) {
