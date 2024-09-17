@@ -7,7 +7,8 @@ public class ClientHandler implements Runnable {
     private Socket socket;
     private Server server;
     private Integer mode;
-    public ClientHandler(Socket socket,Server server) {
+
+    public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
         this.server = server;
     }
@@ -27,18 +28,19 @@ public class ClientHandler implements Runnable {
                     clientReply.println("Chiusura server, sconnessione in corso");
                     break;
                 }
-                    // gestione comandi
-                    String request = clientMessage.nextLine();
-                    System.out.println("Request: " + request);
-                    String command;
-                    String parameter = "";
-                    if (request.indexOf(' ') == -1){
-                        command = request;
-                    } else {
-                        command = request.substring(0,request.indexOf(' '));
-                        parameter = request.substring(request.indexOf(' ')+1);
-                    }
-                    clientReply.printf("Command: %s, Parameter: %s",command,parameter);
+                // gestione comandi
+                String request = clientMessage.nextLine();
+                System.out.println("Request: " + request);
+                String command;
+                String parameter = "";
+                if (request.indexOf(' ') == -1) {
+                    command = request;
+                } else {
+                    command = request.substring(0, request.indexOf(' '));
+                    parameter = request.substring(request.indexOf(' ') + 1);
+                }
+                //utilizzare println se no non va
+                clientReply.println(command + " " + parameter);
             }
 
         } catch (IOException e) {
