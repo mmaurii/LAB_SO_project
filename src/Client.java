@@ -4,123 +4,50 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
-    protected final String quit = "quit";
-    private final String show = "show";
-    private final String publisher = "publisher";
-    private final String subscriber = "subscriber";
-    private boolean running = true;
-    protected Socket socket;
+    public static void main(String[] args) {
+//        if (args.length < 2) {
+//            System.err.println("Usage: java Client <host> <port>");
+//            return;
+//        }
 
+//        String host = args[0];
+        String host = "127.0.0.1";
+//        int port = Integer.parseInt(args[1]);
+        int port = 9000;
 
-    public Client(String host, int port) throws IOException {
-        this.socket = new Socket(host, port);
-    }
-
-    public Client(Socket socket) {
-        this.socket = socket;
-    }
-
-    protected void send(String command) {
         try {
+            Socket s = new Socket(host, port);
+            System.out.println("Connected to server");
+
+            System.out.println("Usage: info <key> to get info on a key");
+
             /*
              * Delega la gestione di input/output a due thread separati, uno per inviare
              * messaggi e uno per leggerli
              *
              */
-            PrintWriter to = new PrintWriter(this.socket.getOutputStream(), true);
-            to.println(command);
-//            to.close();
-        } catch (IOException e) {
-            System.err.println("IOException caught: " + e);
-            e.printStackTrace();
-        }
-    }
+            Thread sender = new Thread(new Sender(s));
+            Thread receiver = new Thread(new Receiver(s, sender));
 
-    protected void recive() {
-        Scanner from = null;
-        try {
-            from = new Scanner(this.socket.getInputStream());
+            sender.start();
+            receiver.start();
 
-            while (from.hasNextLine()) {
-                System.out.println(from.nextLine());
+            try {
+                /* rimane in attesa che sender e receiver terminino la loro esecuzione */
+                sender.join();
+                receiver.join();
+                s.close();
+                System.out.println("Socket closed.");
+            } catch (InterruptedException e) {
+                /*
+                 * se qualcuno interrompe questo thread nel frattempo, terminiamo
+                 */
+                return;
             }
+
         } catch (IOException e) {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();
         }
-    }
-
-    public void disconnect() {
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Client waitingForCommands() {
-        while (running) {
-            Scanner scanner = new Scanner(System.in);
-            String command = scanner.nextLine();
-
-            if (command.equals(quit)) {
-                running = false;
-                break;
-            } else if (command.equals(show)) {
-                show();
-            } else if (command.split(" ")[0].equals(publisher)) {
-                running = false;
-                String parameter;
-                try {
-                    parameter = command.substring(command.indexOf(' ') + 1);
-                } catch (IndexOutOfBoundsException e) {
-                    System.out.println("No such parameter for: " + command + "\nRequired: publisher topic");
-                    break;
-                }
-                return publisher(parameter);
-            } else if (command.split(" ")[0].equals(subscriber)) {
-                running = false;
-                String parameter;
-                try {
-                    parameter = command.substring(command.indexOf(' ') + 1);
-                } catch (IndexOutOfBoundsException e) {
-                    System.out.println("No such parameter for: " + command + "\nRequired: publisher topic");
-                    break;
-                }
-                return subscriber(parameter);
-            }
-        }
-        return null;
-    }
-
-    private Subscriber subscriber(String parameter) {
-        send(subscriber);
-        recive();
-        Subscriber subscriber = null;
-
-        try {
-            subscriber = new Subscriber(socket, parameter);
-        } catch (IOException e) {
-            System.err.println("IOException caught: " + e);
-            e.printStackTrace();
-        }
-        return subscriber;
-    }
-
-    private Publisher publisher(String topicTitle) {
-
-        send(publisher);
-        recive();
-        Publisher publisher = null;
-
-        Topic topic = new Topic(topicTitle);
-        publisher = new Publisher(socket, topic);
-
-        return publisher;
-    }
-
-    private void show() {
-        send(show);
-        recive();
     }
 }

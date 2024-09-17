@@ -1,20 +1,16 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Scanner;
 
 public class ClientHandler implements Runnable {
-
     private Socket socket;
-    private HashMap<String, String> response = new HashMap<>();
+    private Server server;
+    private Integer mode;
 
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
-        // Risposte
-        response.put("important", "Incredibly important bit of response about everything");
-        response.put("random", "Random bit of response about something");
-        response.put("shadow", "The outer part of a shadow is called the penumbra");
+        this.server = server;
     }
 
     @Override
@@ -24,41 +20,27 @@ public class ClientHandler implements Runnable {
                 PrintWriter clientReply = new PrintWriter(socket.getOutputStream(), true)
         ) {
 
-            boolean closed = false;
-            while (!closed) {
+            boolean running = true;
+            while (running) {
                 if (Thread.currentThread().isInterrupted()) {
                     // Gestione interruzione
                     System.out.println("Thread interrotto.");
                     clientReply.println("Chiusura server, sconnessione in corso");
                     break;
                 }
+                // gestione comandi
+                String request = clientMessage.nextLine();
+                System.out.println("Request: " + request);
+                String command;
+                String parameter = "";
+                if (request.indexOf(' ') == -1) {
+                    command = request;
+                } else {
+                    command = request.substring(0, request.indexOf(' '));
+                    parameter = request.substring(request.indexOf(' ') + 1);
+                }
+                clientReply.printf("Command: %s, Parameter: %s", command, parameter);
 
-                // Controllo input da parte del client
-//                if (clientMessage.hasNextLine()) {
-                    String request = clientMessage.nextLine();
-                    System.out.println("Request: " + request);
-                    String[] parts = request.split(" ");
-
-                switch (parts[0]) {
-                    case "quit":
-                        closed = true;
-                        break;
-
-                    case "info":
-                        if (parts.length > 1) {
-                            String key = parts[1];
-                            String res = response.getOrDefault(key, "Errore, no info");
-                            clientReply.println(res);
-                        } else {
-                            clientReply.println("Nessun parametro fornito");
-                        }
-                        break;
-
-                        default:
-                            clientReply.println("Comando sconosciuto");
-                            break;
-                    }
-//                }
             }
 
         } catch (IOException e) {

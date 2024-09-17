@@ -54,6 +54,10 @@ public class Server implements Runnable {
         create();
     }
 
+    public List<Topic> getTopics(){
+        return topics;
+    }
+
     /**
      * Avvio del server thread, in attesa di connessioni dai client
      */
@@ -67,7 +71,7 @@ public class Server implements Runnable {
                     System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
                     if (!Thread.interrupted()) {
                         // crea un nuovo thread per il nuovo socket
-                        Thread handlerThread = new Thread(new ClientHandler(clientSocket));
+                        Thread handlerThread = new Thread(new ClientHandler(clientSocket,this));
                         handlerThread.start();
                         this.clients.add(handlerThread);
                     } else {
@@ -227,7 +231,7 @@ public class Server implements Runnable {
 
     }
 
-     // Aggiunge un nuovo topic (se non esiste già)
+     // Aggiunge un nuovo topic
     public synchronized void addTopic(String topic) {
         topics1.putIfAbsent(topic, new ArrayList<>());
         subscribers.putIfAbsent(topic, new ArrayList<>());
