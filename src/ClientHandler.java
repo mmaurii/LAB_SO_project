@@ -1,10 +1,7 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
@@ -13,7 +10,7 @@ public class ClientHandler implements Runnable {
     private Boolean publishORSubscribe = null;
     private Topic topic = null;
     private List<Message> messages;
-
+    PrintWriter clientPW;
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
@@ -23,17 +20,17 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-        try (
-                Scanner clientMessage = new Scanner(socket.getInputStream());
-                PrintWriter clientReply = new PrintWriter(socket.getOutputStream(), true)
-        ) {
+        try {
+            Scanner clientMessage = new Scanner(socket.getInputStream());
+            clientPW = new PrintWriter(socket.getOutputStream(), true);
+
 
             boolean running = true;
             while (running) {
                 if (Thread.currentThread().isInterrupted()) {
                     // Gestione interruzione
                     System.out.println("Thread interrotto.");
-                    clientReply.println("Chiusura server, sconnessione in corso");
+                    clientPW.println("Chiusura server, sconnessione in corso");
                     break;
                 }
                 // gestione comandi
@@ -49,19 +46,19 @@ public class ClientHandler implements Runnable {
                 }
                 System.out.println(command);
                 switch (command) {
-                    case "publish" -> publish(parameter, clientReply);
-                    case "subscribe" -> subscribe(parameter, clientReply);
-                    case "show" -> show(clientReply);
+                    case "publish" -> publish(parameter);
+                    case "subscribe" -> subscribe(parameter);
+                    case "show" -> show();
                     case "quit" -> {
                         running = false;
-                        clientReply.println("quit");
+                        clientPW.println("quit");
                     }
 
-                    case "send" -> send(parameter, clientReply);
-                    case "list" -> list(clientReply);
+                    case "send" -> send(parameter);
+                    case "list" -> list();
 
-                    case "listall" -> listAll(clientReply);
-                    default -> clientReply.println("Comando invalido");
+                    case "listall" -> listAll();
+                    default -> clientPW.println("Comando invalido");
                 }
             }
 
@@ -79,43 +76,39 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void publish(String parameter, PrintWriter reply) {
+    private void publish(String parameter) {
         if (publishORSubscribe == null && !Objects.equals(parameter, "")) {
-            reply.printf("Registrato publisher a topic %s\n", parameter);
+            clientPW.printf("Registrato publisher a topic %s\n", parameter);
             publishORSubscribe = false;
             // <pubblicare il topic>
 
-            this.topic = new Topic(parameter);
-            server.addTopic(topic);
+            this.topic = server.addTopic(new Topic(parameter));
 
-            reply.printf("Pubblicato: %s\n", parameter);
+            clientPW.printf("Pubblicato: %s\n", parameter);
         } else {
-            reply.println("Comando invalido");
+            clientPW.println("Comando invalido");
         }
     }
 
-    private void subscribe(String parameter, PrintWriter reply) {
+    private void subscribe(String parameter) {
         if (publishORSubscribe == null && !Objects.equals(parameter, "")) {
-            this.topic = new Topic(parameter);
+            this.topic = server.addSubscriber(this, new Topic(parameter));
 
             //controllo l'esistenza del topic
-            if (!server.getTopics().contains(topic)) {
-                reply.printf("Registrato subscriber a topic %s\n", parameter);
+            if (topic == null) {
+                clientPW.println("Il topic inserito non esiste");
+            } else {
+                clientPW.printf("Registrato subscriber a topic %s\n", parameter);
+                clientPW.printf("Iscritto: %s\n", parameter);
                 publishORSubscribe = true;
-
-                server.addSubscriber(this,topic);
-
-                reply.printf("Iscritto: %s\n", parameter);
-            }else {
-                reply.println("Il topic inserito non esiste");
             }
         } else {
-            reply.println("Comando invalido");
+            clientPW.println("Comando invalido");
         }
     }
 
-    private void show(PrintWriter reply) {
-        List<Topic> lTopic = server.getTopics();
+    private void show() {
+        HashSet<Topic> lTopic = server.getTopics();
         String output = "";
 
         if (!lTopic.isEmpty()) {
@@ -127,43 +120,55 @@ public class ClientHandler implements Runnable {
             output = "non ci sono topic disponibili";
         }
 
-        reply.println(output);
+        clientPW.println(output);
     }
 
     // false = publisher, true = subscriber
-    private boolean isPublisherCommand(String command, PrintWriter reply) {
+    private boolean isPublisherCommand(String command) {
         if (command.equals("send") && !publishORSubscribe) return true;
         if (command.equals("list") && !publishORSubscribe) return true;
 
-        reply.println("Comando invalido");
+        clientPW.println("Comando invalido");
         return false;
     }
 
-    private void send(String text, PrintWriter reply) {
-        if (isPublisherCommand("send", reply)) {
+    private void send(String text) {
+        if (isPublisherCommand("send")) {
             if (text.isEmpty()) {
-                reply.println("Manca il parametro");
+                clientPW.println("Manca il parametro");
             } else {
                 // funzionalità
                 Message mess = new Message(text);
+
+                //invio il messaccio a tutti i subscriber
+                for (ClientHandler c : topic.getClients()) {
+                    c.sendToClient(mess);
+                }
+
+                //salvo il messaggio
                 messages.add(mess);
+                topic.getMessages().add(mess);
             }
         }
     }
 
-    private void list(PrintWriter reply) {
-        if (isPublisherCommand("list", reply)) {
+    public void sendToClient(Message message) {
+        clientPW.println(message.toString());
+    }
+
+    private void list() {
+        if (isPublisherCommand("list")) {
             // funzionalità
             for (Message mess : messages) {
-                reply.println(mess.toString());
+                clientPW.println(mess.toString());
             }
         }
     }
 
-    private void listAll(PrintWriter reply) {
+    private void listAll() {
         // funzionalità
         for (Message mess : topic.getMessages()) {
-            reply.println(mess.toString());
+            clientPW.println(mess.toString());
         }
     }
 }

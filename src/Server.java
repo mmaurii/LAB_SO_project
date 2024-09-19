@@ -8,10 +8,8 @@ import java.util.*;
  * Classe server
  */
 public class Server implements Runnable {
-    private final List<Topic> topics = new ArrayList<>();
+    private final HashSet<Topic> topics = new HashSet<>();
     private final List<Thread> clients = new ArrayList<>();
-    private Map<Topic, List<Message>> topics1;
-    private Map<Topic, List<ClientHandler>> subscribers;
     private Topic inspectedTopic = null;
     private boolean running = true;
     final int port;
@@ -54,7 +52,7 @@ public class Server implements Runnable {
         create();
     }
 
-    public List<Topic> getTopics() {
+    public HashSet<Topic> getTopics() {
         return topics;
     }
 
@@ -234,14 +232,20 @@ public class Server implements Runnable {
     }
 
     // Aggiunge un nuovo topic
-    public synchronized void addTopic(Topic topic) {
-        topics1.putIfAbsent(topic, new ArrayList<>());
-        subscribers.putIfAbsent(topic, new ArrayList<>());
+    public synchronized Topic addTopic(Topic topic) {
+        for (Topic t : topics) {
+            if (topic.equals(t)) {
+                return t;
+            }
+        }
+
+        topics.add(topic);
+        return topic;
     }
 
     // Aggiunge un messaggio a un topic
-    public synchronized void addMessageToTopic(String topic, Message message) {
-        List<Message> messages = topics1.get(topic);
+    public synchronized void addMessageToTopic(Topic topic, Message message) {
+        List<Message> messages = topic.getMessages();
         if (messages != null) {
             messages.add(message);
             //notifySubscribers(topic, message); // Notifica i subscriber
@@ -252,10 +256,13 @@ public class Server implements Runnable {
     }
 
     // Aggiunge un subscriber per un determinato topic
-    public synchronized void addSubscriber(ClientHandler client, Topic topic) {
-        List<ClientHandler> topicSubscribers = subscribers.get(topic);
-        if (topicSubscribers != null) {
-            topicSubscribers.add(client);
+    public synchronized Topic addSubscriber(ClientHandler client, Topic topic) {
+        for (Topic t : topics) {
+            if (topic.equals(t)) {
+                t.getClients().add(client);
+                return t;
+            }
         }
+        return null;
     }
 }
