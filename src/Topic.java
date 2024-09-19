@@ -25,4 +25,17 @@ public class Topic {
         maxMessageID += 1;
         messages.add(new Message(message));
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Topic) {
+            return ((Topic) obj).title.equals(title);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return title.hashCode();
+    }
 }

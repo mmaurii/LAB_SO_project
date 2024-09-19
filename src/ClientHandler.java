@@ -9,13 +9,16 @@ import java.util.Scanner;
 public class ClientHandler implements Runnable {
     private Socket socket;
     private Server server;
-    // 0 = publisher, 1 = subscriber
-    private Integer mode = null;
+    // false = publisher, true = subscriber
+    private Boolean publishORSubscribe = null;
     private Topic topic = null;
+    private List<Message> messages;
+
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
         this.server = server;
+        this.messages = new ArrayList<>();
     }
 
     @Override
@@ -77,10 +80,13 @@ public class ClientHandler implements Runnable {
     }
 
     private void publish(String parameter, PrintWriter reply) {
-        if (mode == null && !Objects.equals(parameter, "")) {
+        if (publishORSubscribe == null && !Objects.equals(parameter, "")) {
             reply.printf("Registrato publisher a topic %s\n", parameter);
-            mode = 0;
+            publishORSubscribe = false;
             // <pubblicare il topic>
+
+            this.topic = new Topic(parameter);
+            server.addTopic(topic);
 
             reply.printf("Pubblicato: %s\n", parameter);
         } else {
@@ -89,11 +95,20 @@ public class ClientHandler implements Runnable {
     }
 
     private void subscribe(String parameter, PrintWriter reply) {
-        if (mode == null && !Objects.equals(parameter, "")) {
-            reply.printf("Registrato subscriber a topic %s\n", parameter);
-            mode = 1;
+        if (publishORSubscribe == null && !Objects.equals(parameter, "")) {
+            this.topic = new Topic(parameter);
 
-            reply.printf("Iscritto: %s\n", parameter);
+            //controllo l'esistenza del topic
+            if (!server.getTopics().contains(topic)) {
+                reply.printf("Registrato subscriber a topic %s\n", parameter);
+                publishORSubscribe = true;
+
+                server.addSubscriber(this,topic);
+
+                reply.printf("Iscritto: %s\n", parameter);
+            }else {
+                reply.println("Il topic inserito non esiste");
+            }
         } else {
             reply.println("Comando invalido");
         }
@@ -103,33 +118,35 @@ public class ClientHandler implements Runnable {
         List<Topic> lTopic = server.getTopics();
         String output = "";
 
-        if(!lTopic.isEmpty()) {
+        if (!lTopic.isEmpty()) {
             output = "Lista dei topic presenti:";
             for (Topic t : lTopic) {
                 output += "\n\t- " + t.getTitle();
             }
-        }else {
+        } else {
             output = "non ci sono topic disponibili";
         }
 
         reply.println(output);
     }
 
-    // 0 = publisher, 1 = subscriber
+    // false = publisher, true = subscriber
     private boolean isPublisherCommand(String command, PrintWriter reply) {
-        if (command.equals("send") && mode == 0) return true;
-        if (command.equals("list") && mode == 0) return true;
+        if (command.equals("send") && !publishORSubscribe) return true;
+        if (command.equals("list") && !publishORSubscribe) return true;
 
         reply.println("Comando invalido");
         return false;
     }
 
-    private void send(String message, PrintWriter reply) {
+    private void send(String text, PrintWriter reply) {
         if (isPublisherCommand("send", reply)) {
-            if (message.isEmpty()) {
+            if (text.isEmpty()) {
                 reply.println("Manca il parametro");
             } else {
                 // funzionalità
+                Message mess = new Message(text);
+                messages.add(mess);
             }
         }
     }
@@ -137,10 +154,16 @@ public class ClientHandler implements Runnable {
     private void list(PrintWriter reply) {
         if (isPublisherCommand("list", reply)) {
             // funzionalità
+            for (Message mess : messages) {
+                reply.println(mess.toString());
+            }
         }
     }
 
     private void listAll(PrintWriter reply) {
         // funzionalità
+        for (Message mess : topic.getMessages()) {
+            reply.println(mess.toString());
+        }
     }
 }

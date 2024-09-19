@@ -10,8 +10,8 @@ import java.util.*;
 public class Server implements Runnable {
     private final List<Topic> topics = new ArrayList<>();
     private final List<Thread> clients = new ArrayList<>();
-    private Map<String, List<Message>> topics1;
-    private Map<String, List<ClientHandler>> subscribers;
+    private Map<Topic, List<Message>> topics1;
+    private Map<Topic, List<ClientHandler>> subscribers;
     private Topic inspectedTopic = null;
     private boolean running = true;
     final int port;
@@ -234,7 +234,7 @@ public class Server implements Runnable {
     }
 
     // Aggiunge un nuovo topic
-    public synchronized void addTopic(String topic) {
+    public synchronized void addTopic(Topic topic) {
         topics1.putIfAbsent(topic, new ArrayList<>());
         subscribers.putIfAbsent(topic, new ArrayList<>());
     }
@@ -252,7 +252,7 @@ public class Server implements Runnable {
     }
 
     // Aggiunge un subscriber per un determinato topic
-    public synchronized void addSubscriber(ClientHandler client, String topic) {
+    public synchronized void addSubscriber(ClientHandler client, Topic topic) {
         List<ClientHandler> topicSubscribers = subscribers.get(topic);
         if (topicSubscribers != null) {
             topicSubscribers.add(client);
