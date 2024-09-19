@@ -17,12 +17,13 @@ public class Receiver implements Runnable {
         try {
             Scanner from = new Scanner(this.s.getInputStream());
             while (true) {
-                String response = from.nextLine();
-                System.out.println("Received: " + response);
-                if (response.equals("quit")) {
-                    break;
+                if(from.hasNextLine()){
+                    String response = from.nextLine();
+                    System.out.println("Received: " + response);
+                    if (response.equals("quit")) {
+                        break;
+                    }
                 }
-
             }
         } catch (IOException e) {
             System.err.println("IOException caught: " + e);

@@ -10,7 +10,8 @@ public class ClientHandler implements Runnable {
     private Boolean publishORSubscribe = null;
     private Topic topic = null;
     private List<Message> messages;
-    PrintWriter clientPW;
+    private PrintWriter clientPW;
+    private boolean running = true;
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
@@ -24,8 +25,6 @@ public class ClientHandler implements Runnable {
             Scanner clientMessage = new Scanner(socket.getInputStream());
             clientPW = new PrintWriter(socket.getOutputStream(), true);
 
-
-            boolean running = true;
             while (running) {
                 if (Thread.currentThread().isInterrupted()) {
                     // Gestione interruzione
@@ -49,10 +48,7 @@ public class ClientHandler implements Runnable {
                     case "publish" -> publish(parameter);
                     case "subscribe" -> subscribe(parameter);
                     case "show" -> show();
-                    case "quit" -> {
-                        running = false;
-                        clientPW.println("quit");
-                    }
+                    case "quit" -> quit();
 
                     case "send" -> send(parameter);
                     case "list" -> list();
@@ -170,5 +166,9 @@ public class ClientHandler implements Runnable {
         for (Message mess : topic.getMessages()) {
             clientPW.println(mess.toString());
         }
+    }
+    public void quit(){
+        running = false;
+        clientPW.println("quit");
     }
 }

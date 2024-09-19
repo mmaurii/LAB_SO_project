@@ -9,7 +9,7 @@ import java.util.*;
  */
 public class Server implements Runnable {
     private final HashSet<Topic> topics = new HashSet<>();
-    private final List<Thread> clients = new ArrayList<>();
+    private final List<ClientHandler> clients = new ArrayList<>();
     private Topic inspectedTopic = null;
     private boolean running = true;
     final int port;
@@ -69,9 +69,9 @@ public class Server implements Runnable {
                     System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
                     if (!Thread.interrupted()) {
                         // crea un nuovo thread per il nuovo socket
-                        Thread handlerThread = new Thread(new ClientHandler(clientSocket, this));
-                        handlerThread.start();
-                        this.clients.add(handlerThread);
+                        ClientHandler ch = new ClientHandler(clientSocket,this);
+                        new Thread(ch).start();
+                        this.clients.add(ch);
                     } else {
                         serverSocket.close();
                         break;
@@ -127,14 +127,9 @@ public class Server implements Runnable {
     private void quit() {
         running = false;
         System.out.println("Interruzione dei client connessi");
-        for (Thread client : this.clients) {
+        for (ClientHandler client : this.clients) {
             System.out.println("Interruzione client " + client);
-            /*
-             * client.interrupt() non è bloccante; una volta inviato il segnale
-             * di interruzione proseguiamo con l'esecuzione, senza aspettare che "child"
-             * termini
-             */
-            client.interrupt();
+           client.quit();
         }
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
