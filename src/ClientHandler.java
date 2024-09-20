@@ -25,7 +25,8 @@ public class ClientHandler implements Runnable {
             Scanner clientMessage = new Scanner(socket.getInputStream());
             clientPW = new PrintWriter(socket.getOutputStream(), true);
 
-            while (running) {
+            //controllo che ci sia un comando del client da leggere
+            while (running && clientMessage.hasNextLine()) {
                 if (Thread.currentThread().isInterrupted()) {
                     // Gestione interruzione
                     System.out.println("Thread interrotto.");

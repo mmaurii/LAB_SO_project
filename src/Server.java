@@ -69,7 +69,7 @@ public class Server implements Runnable {
                     System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
                     if (!Thread.interrupted()) {
                         // crea un nuovo thread per il nuovo socket
-                        ClientHandler ch = new ClientHandler(clientSocket,this);
+                        ClientHandler ch = new ClientHandler(clientSocket, this);
                         new Thread(ch).start();
                         this.clients.add(ch);
                     } else {
@@ -129,7 +129,7 @@ public class Server implements Runnable {
         System.out.println("Interruzione dei client connessi");
         for (ClientHandler client : this.clients) {
             System.out.println("Interruzione client " + client);
-           client.quit();
+            client.quit();
         }
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {

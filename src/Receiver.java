@@ -2,12 +2,11 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class Receiver implements Runnable {
-
+public class Receiver extends Thread {
     Socket s;
-    Thread sender;
+    Sender sender;
 
-    public Receiver(Socket s, Thread sender) {
+    public Receiver(Socket s, Sender sender) {
         this.s = s;
         this.sender = sender;
     }
@@ -17,7 +16,7 @@ public class Receiver implements Runnable {
         try {
             Scanner from = new Scanner(this.s.getInputStream());
             while (true) {
-                if(from.hasNextLine()){
+                if (from.hasNextLine()) {
                     String response = from.nextLine();
                     System.out.println("Received: " + response);
                     if (response.equals("quit")) {
@@ -29,7 +28,7 @@ public class Receiver implements Runnable {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();
         } finally {
-            this.sender.interrupt();
+            sender.interrupt();
             System.out.println("Receiver closed.");
         }
     }

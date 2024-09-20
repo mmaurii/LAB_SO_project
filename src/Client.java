@@ -26,9 +26,8 @@ public class Client {
              * messaggi e uno per leggerli
              *
              */
-            Thread sender = new Thread(new Sender(s));
-            Thread receiver = new Thread(new Receiver(s, sender));
-
+            Sender sender =new Sender(s);
+            Receiver receiver = new Receiver(s, sender);
             sender.start();
             receiver.start();
 

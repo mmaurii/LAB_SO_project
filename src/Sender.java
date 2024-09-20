@@ -1,35 +1,43 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class Sender implements Runnable {
-
+public class Sender extends Thread {
     Socket s;
-
     public Sender(Socket s) {
         this.s = s;
     }
 
     @Override
     public void run() {
-        Scanner userInput = new Scanner(System.in);
-
+        BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
         try {
             PrintWriter to = new PrintWriter(this.s.getOutputStream(), true);
             while (true) {
-                String request = userInput.nextLine();
-                /*
-                 * se il thread è stato interrotto mentre leggevamo l'input da tastiera, inviamo
-                 * "quit" al server e usciamo
-                 */
+                if (bf.ready()) {
+                    String request = bf.readLine();
+                    /*
+                     * se il thread è stato interrotto mentre leggevamo l'input da tastiera, inviamo
+                     * "quit" al server e usciamo
+                     */
+                    if (Thread.interrupted()) {
+                        to.println("quit");
+                        break;
+                    }
+                    /* in caso contrario proseguiamo e analizziamo l'input inserito */
+                    to.println(request);
+                    if (request.equals("quit")) {
+                        break;
+                    }
+                }
+
+                //controllo se il server si è disconnesso
                 if (Thread.interrupted()) {
                     to.println("quit");
-                    break;
-                }
-                /* in caso contrario proseguiamo e analizziamo l'input inserito */
-                to.println(request);
-                if (request.equals("quit")) {
+                    System.out.println("Il server si è disconnesso");
                     break;
                 }
             }
@@ -38,8 +46,11 @@ public class Sender implements Runnable {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();
         } finally {
-            userInput.close();
+            try {
+                bf.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
-
 }
