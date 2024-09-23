@@ -116,7 +116,7 @@ public class Server implements Runnable {
         switch (command) {
             case "listall" -> listAll();
             case "end" -> end();
-            case "delete" -> delete(Integer.parseInt(parameter));
+            case "delete" -> delete(parameter);
             default -> System.err.println("Comando non riconosciuto: " + command);
         }
     }
@@ -210,19 +210,25 @@ public class Server implements Runnable {
      *
      * @param id ID del messaggio che si vuole cancellare
      */
-    private void delete(int id) {
-        // da cambiare in base a come decidiamo di fare l'id
-        ArrayList<Message> messages = inspectedTopic.getMessages();
-        int initialSize = messages.size();
-        // Costrutto simile all'Iterator per rimuovere con
-        // sicurezza un elemento da una lista se soddisfa una condizione
-        synchronized (messages) {
-            messages.removeIf(m -> m.getID() == id);
+    private void delete(String parameter) {
+        int id;
+        try {
+            id = Integer.parseInt(parameter);
+            // da cambiare in base a come decidiamo di fare l'id
+            ArrayList<Message> messages = inspectedTopic.getMessages();
+            int initialSize = messages.size();
+            // Costrutto simile all'Iterator per rimuovere con
+            // sicurezza un elemento da una lista se soddisfa una condizione
+            synchronized (messages) {
+                messages.removeIf(m -> m.getID() == id);
+            }
+            // confronto le dimensioni della lista per capire se è stato cancellato un elemento
+            if (initialSize == messages.size()) {
+                System.err.println("Messaggio con id " + id + " non esiste");
+            } else System.out.println("Messaggio eliminato");
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input: " + parameter + " is not a valid integer.");
         }
-        // confronto le dimensioni della lista per capire se è stato cancellato un elemento
-        if (initialSize == messages.size()) {
-            System.err.println("Messaggio con id " + id + " non esiste");
-        } else System.out.println("Messaggio eliminato");
 
     }
 
