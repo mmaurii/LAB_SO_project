@@ -1,4 +1,6 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -14,17 +16,20 @@ public class Receiver extends Thread {
     @Override
     public void run() {
         try {
-            Scanner from = new Scanner(this.s.getInputStream());
-            while (true) {
-                if (from.hasNextLine()) {
-                    String response = from.nextLine();
-                    System.out.println("Received: " + response);
-                    if (response.equals("quit")) {
-                        break;
-                    }
+            BufferedReader from = new BufferedReader(new InputStreamReader(this.s.getInputStream()));
+            StringBuilder responseBuilder = new StringBuilder();
+            String line;
+            while ((line = from.readLine()) != null) {
+                responseBuilder.append(line).append("\n"); // aggiungi la prossima linea
+                System.out.println("Received: " + line);
+                if (line.equals("quit")) {
+                    break;
                 }
             }
-        } catch (IOException e) {
+            String response = responseBuilder.toString();
+            System.out.println("Complete response: " + response);
+
+        }catch (IOException e) {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();
         } finally {

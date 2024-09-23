@@ -60,4 +60,9 @@ public class Topic {
     public int hashCode() {
         return title.hashCode();
     }
+
+    @Override
+    public String toString(){
+        return String.format("%s: %s",title,messages);
+    }
 }

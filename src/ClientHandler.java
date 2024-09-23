@@ -44,7 +44,6 @@ public class ClientHandler implements Runnable {
                     command = request.substring(0, request.indexOf(' '));
                     parameter = request.substring(request.indexOf(' ') + 1);
                 }
-                System.out.println(command);
                 switch (command) {
                     case "publish" -> publish(parameter);
                     case "subscribe" -> subscribe(parameter);
@@ -106,7 +105,7 @@ public class ClientHandler implements Runnable {
 
     private void show() {
         HashSet<Topic> lTopic = server.getTopics();
-        String output = "";
+        String output;
 
         if (!lTopic.isEmpty()) {
             output = "Lista dei topic presenti:";
@@ -122,6 +121,12 @@ public class ClientHandler implements Runnable {
 
     // false = publisher, true = subscriber
     private boolean isPublisherCommand(String command) {
+
+        if (publishORSubscribe == null){
+            clientPW.println("Comando invalido");
+            return false;
+        }
+
         if (command.equals("send") && !publishORSubscribe) return true;
         if (command.equals("list") && !publishORSubscribe) return true;
 
@@ -145,6 +150,7 @@ public class ClientHandler implements Runnable {
                 //salvo il messaggio
                 messages.add(mess);
                 topic.getMessages().add(mess);
+                clientPW.printf("Inviato messaggio \"%s\"\n",text);
             }
         }
     }
@@ -155,6 +161,10 @@ public class ClientHandler implements Runnable {
 
     private void list() {
         if (isPublisherCommand("list")) {
+            if(messages.isEmpty()){
+                clientPW.println("Non ci sono messaggi");
+                return;
+            }
             // funzionalità
             for (Message mess : messages) {
                 clientPW.println(mess.toString());
@@ -163,10 +173,12 @@ public class ClientHandler implements Runnable {
     }
 
     private void listAll() {
+        if(!topic.getMessages().isEmpty()){
         // funzionalità
         for (Message mess : topic.getMessages()) {
             clientPW.println(mess.toString());
         }
+        } else {clientPW.println("Non ci sono messaggi");}
     }
     public void quit(){
         running = false;
