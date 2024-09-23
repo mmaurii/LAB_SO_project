@@ -192,7 +192,7 @@ public class Server implements Runnable {
         } else {
             System.out.println("Messaggi:");
             for (Message m : inspectedTopic.getMessages()) {
-                System.out.println("\t" + "- " + m.getID() + "\n" + "\t" + m.getText());
+                System.out.println("\t" + "- " + m.getID() + "\n" + "\t" + m.getText() + "\n" + "\t" + m.getSendDate());
 
             }
         }
