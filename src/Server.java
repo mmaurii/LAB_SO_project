@@ -208,7 +208,7 @@ public class Server implements Runnable {
     /**
      * Cancella messaggi dal topic ispezionato
      *
-     * @param id ID del messaggio che si vuole cancellare
+     * @param parameter ID del messaggio che si vuole cancellare
      */
     private void delete(String parameter) {
         int id;
