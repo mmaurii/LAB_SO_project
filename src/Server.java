@@ -192,8 +192,7 @@ public class Server implements Runnable {
         } else {
             System.out.println("Messaggi:");
             for (Message m : inspectedTopic.getMessages()) {
-                System.out.println("\t" + "- " + m.getID() + "\n" + "\t" + m.getText() + "\n" + "\t" + m.getSendDate());
-
+                System.out.println("\t- " + m.getID() + "\n\t" + m.getText() + "\n\t" + m.getSendDate());
             }
         }
     }
@@ -221,6 +220,10 @@ public class Server implements Runnable {
             // sicurezza un elemento da una lista se soddisfa una condizione
             synchronized (messages) {
                 messages.removeIf(m -> m.getID() == id);
+            }
+
+            for(ClientHandler ch: clients){
+                ch.delMessage(inspectedTopic,id);
             }
             // confronto le dimensioni della lista per capire se è stato cancellato un elemento
             if (initialSize == messages.size()) {

@@ -105,15 +105,15 @@ public class ClientHandler implements Runnable {
 
     private void show() {
         HashSet<Topic> lTopic = server.getTopics();
-        String output;
+        StringBuilder output;
 
         if (!lTopic.isEmpty()) {
-            output = "Lista dei topic presenti:";
+            output = new StringBuilder("Lista dei topic presenti:");
             for (Topic t : lTopic) {
-                output += "\n\t- " + t.getTitle();
+                output.append("\n\t- ").append(t.getTitle());
             }
         } else {
-            output = "non ci sono topic disponibili";
+            output = new StringBuilder("non ci sono topic disponibili");
         }
 
         clientPW.println(output);
@@ -142,7 +142,7 @@ public class ClientHandler implements Runnable {
                 // funzionalità
                 Message mess = new Message(text);
 
-                //invio il messaccio a tutti i subscriber
+                //invio il messaggio a tutti i subscriber
                 for (ClientHandler c : topic.getClients()) {
                     c.sendToClient(mess);
                 }
@@ -173,15 +173,27 @@ public class ClientHandler implements Runnable {
     }
 
     private void listAll() {
-        if(!topic.getMessages().isEmpty()){
+        if(topic==null){
+            clientPW.println("Comando invalido");
+            return;
+        }
+        if(topic.getMessages().isEmpty()){
+            clientPW.println("Non ci sono messaggi");
+            return;
+        }
         // funzionalità
         for (Message mess : topic.getMessages()) {
             clientPW.println(mess.toString());
         }
-        } else {clientPW.println("Non ci sono messaggi");}
     }
     public void quit(){
         running = false;
         clientPW.println("quit");
+    }
+
+    public void delMessage(Topic t,int id){
+        if(topic==t){
+            messages.removeIf(m -> m.getID() == id);
+        }
     }
 }
