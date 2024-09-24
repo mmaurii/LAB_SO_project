@@ -12,6 +12,12 @@ public class ClientHandler implements Runnable {
     private List<Message> messages;
     private PrintWriter clientPW;
     private boolean running = true;
+    private final Object sendLock = new Object(); // Oggetto di sincronizzazione
+
+    // Getter per sendLock
+    public Object getSendLock() {
+        return sendLock;
+    }
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
@@ -139,21 +145,39 @@ public class ClientHandler implements Runnable {
             if (text.isEmpty()) {
                 clientPW.println("Manca il parametro");
             } else {
-                // funzionalità
-                Message mess = new Message(text);
-
-                //invio il messaggio a tutti i subscriber
-                for (ClientHandler c : topic.getClients()) {
-                    c.sendToClient(mess);
+                synchronized (sendLock) {
+                    // Controlla se il topic in ispezione è lo stesso del topic attuale
+                    if (server.getInspectedTopic() != null && server.getInspectedTopic().equals(topic)) {
+                        // Messaggio in attesa
+                        clientPW.println("Messaggio in attesa: \"" + text + "\". Attendere la fine dell'ispezione.");
+                        
+                        try {
+                            // Mette in attesa il thread del client
+                            sendLock.wait();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt(); // Ripristina lo stato di interruzione
+                            clientPW.println("Invio messaggio interrotto.");
+                            return;
+                        }
+                    }
+    
+                    // Invia il messaggio a tutti i subscriber
+                    Message mess = new Message(text);
+                    for (ClientHandler c : topic.getClients()) {
+                        c.sendToClient(mess);
+                    }
+    
+                    // Salva il messaggio
+                    messages.add(mess);
+                    topic.getMessages().add(mess);
+                    clientPW.printf("Inviato messaggio \"%s\"\n", text);
                 }
-
-                //salvo il messaggio
-                messages.add(mess);
-                topic.getMessages().add(mess);
-                clientPW.printf("Inviato messaggio \"%s\"\n",text);
             }
         }
     }
+    
+    
+    
 
     public void sendToClient(Message message) {
         clientPW.println(message.toString());

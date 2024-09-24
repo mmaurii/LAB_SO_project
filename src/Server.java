@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -14,6 +15,9 @@ public class Server implements Runnable {
     private boolean running = true;
     final int port;
     private ServerSocket serverSocket = null;
+    final String DATE_TIME_FORMAT = "yyyy-MM-dd kk:mm:ss";
+
+
 
 
     public Server(int port) {
@@ -153,19 +157,25 @@ public class Server implements Runnable {
         }
     }
 
-    /**
-     * Imposta il topic ispezionato se è presente
-     *
-     * @param topic topic che si vuole ispezionare
-     */
-    private void inspect(String topic) {
-        if (topic == null) {
-            System.err.println("Inserisci topic da ispezionare");
+/**
+ * Imposta il topic ispezionato se è presente
+ *
+ * @param topicName topic che si vuole ispezionare
+ */
+public synchronized void inspect(String topicName) {
+    if (topicName == null) {
+        System.err.println("Inserisci il nome del topic da ispezionare.");
+    } else {
+        Topic topicToInspect = getTopicFromTitle(topicName);
+        if (topicToInspect == null) {
+            System.err.println("Il topic " + topicName + " non esiste.");
         } else {
-            inspectedTopic = getTopicFromTitle(topic);
-            if (inspectedTopic == null) System.err.println("Topic " + topic + " non esiste");
+            inspectedTopic = topicToInspect;
+            System.out.println("Ispezionando il topic: " + inspectedTopic.getTitle());
         }
     }
+}
+
 
     /**
      * Restituisce il topic dato il titolo
@@ -185,14 +195,24 @@ public class Server implements Runnable {
     /**
      * Elenca i messaggi in un topic, se ce ne sono
      */
-    public void listAll() {
-        ArrayList<Message> messages = inspectedTopic.getMessages();
-        if (messages.isEmpty()) {
-            System.err.println("Non ci sono messaggi");
-        } else {
-            System.out.println("Messaggi:");
-            for (Message m : inspectedTopic.getMessages()) {
-                System.out.println("\t- " + m.getID() + "\n\t" + m.getText() + "\n\t" + m.getSendDate());
+    public synchronized void listAll() {
+        if (inspectedTopic == null) {
+            System.err.println("Nessun topic in fase di ispezione.");
+            return;
+        }
+
+        synchronized (inspectedTopic) {
+            ArrayList<Message> messages = inspectedTopic.getMessages();
+            if (messages.isEmpty()) {
+                System.err.println("Non ci sono messaggi");
+            } else {
+                System.out.println("Sono stati inviati " + messages.size() + " messaggi in questo topic.");
+
+                for (Message m : messages) {
+                    System.out.println("- ID: " + m.getID());
+                    System.out.println("  Testo: " + m.getText());
+                    System.out.println("  Data: " + m.getSendDate().format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)));
+                }
             }
         }
     }
@@ -200,8 +220,21 @@ public class Server implements Runnable {
     /**
      * Termina la sessione interattiva
      */
-    public void end() {
-        inspectedTopic = null;
+    public synchronized void end() {
+        inspectedTopic = null; // Resetta il topic ispezionato
+    
+        // Notifica tutti i client in attesa
+        for (ClientHandler client : clients) {
+            synchronized (client.getSendLock()) {
+                client.getSendLock().notifyAll(); // Riattiva tutti i client in attesa
+            }
+        }
+    }
+    
+    
+
+    public Topic getInspectedTopic() {
+        return inspectedTopic;
     }
 
     /**
@@ -209,7 +242,7 @@ public class Server implements Runnable {
      *
      * @param parameter ID del messaggio che si vuole cancellare
      */
-    private void delete(String parameter) {
+    private synchronized void delete(String parameter) {
         int id;
         try {
             id = Integer.parseInt(parameter);
@@ -247,17 +280,11 @@ public class Server implements Runnable {
         return topic;
     }
 
-    // Aggiunge un messaggio a un topic
-    public synchronized void addMessageToTopic(Topic topic, Message message) {
-        List<Message> messages = topic.getMessages();
-        if (messages != null) {
-            messages.add(message);
-            //notifySubscribers(topic, message); // Notifica i subscriber
-        }
-    }
 
-    private void notifySubscribers(String topic, Message message) {
-    }
+
+
+
+
 
     // Aggiunge un subscriber per un determinato topic
     public synchronized Topic addSubscriber(ClientHandler client, Topic topic) {
