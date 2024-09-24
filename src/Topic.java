@@ -3,6 +3,8 @@ import java.util.ArrayList;
 public class Topic {
     private String title;
     private ArrayList<Message> messages = new ArrayList<>();
+    private ArrayList<ClientHandler> clients = new ArrayList<>();
+
 
     public ArrayList<ClientHandler> getClients() {
         return clients;
@@ -15,17 +17,6 @@ public class Topic {
     public void setMessages(ArrayList<Message> messages) {
         this.messages = messages;
     }
-
-    public int getMaxMessageID() {
-        return maxMessageID;
-    }
-
-    public void setMaxMessageID(int maxMessageID) {
-        this.maxMessageID = maxMessageID;
-    }
-
-    private ArrayList<ClientHandler> clients = new ArrayList<>();
-    private int maxMessageID = 0;
 
     public Topic(String title) {
         this.title = title;
@@ -43,9 +34,8 @@ public class Topic {
         return messages;
     }
 
-    public void addMessage(String message) {
-        maxMessageID += 1;
-        messages.add(new Message(message));
+    public void addMessage(Message message) {
+        messages.add(message);
     }
 
     @Override

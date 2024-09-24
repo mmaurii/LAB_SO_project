@@ -4,8 +4,8 @@ import java.net.Socket;
 import java.util.*;
 
 public class ClientHandler implements Runnable {
-    private Socket socket;
-    private Server server;
+    private final Socket socket;
+    private final Server server;
     // false = publisher, true = subscriber
     private Boolean publishORSubscribe = null;
     private Topic topic = null;
@@ -128,7 +128,7 @@ public class ClientHandler implements Runnable {
     // false = publisher, true = subscriber
     private boolean isPublisherCommand(String command) {
 
-        if (publishORSubscribe == null){
+        if (publishORSubscribe == null) {
             clientPW.println("Comando invalido");
             return false;
         }
@@ -150,7 +150,7 @@ public class ClientHandler implements Runnable {
                     if (server.getInspectedTopic() != null && server.getInspectedTopic().equals(topic)) {
                         // Messaggio in attesa
                         clientPW.println("Messaggio in attesa: \"" + text + "\". Attendere la fine dell'ispezione.");
-                        
+
                         try {
                             // Mette in attesa il thread del client
                             sendLock.wait();
@@ -160,32 +160,30 @@ public class ClientHandler implements Runnable {
                             return;
                         }
                     }
-    
-                    // Invia il messaggio a tutti i subscriber
+
+                    //creo il messaggio
                     Message mess = new Message(text);
+                    // Invia il messaggio a tutti i subscriber
                     for (ClientHandler c : topic.getClients()) {
                         c.sendToClient(mess);
                     }
-    
-                    // Salva il messaggio
-                    messages.add(mess);
-                    topic.getMessages().add(mess);
+
+                    addMessage(mess);
+
                     clientPW.printf("Inviato messaggio \"%s\"\n", text);
                 }
             }
         }
     }
-    
-    
-    
 
-    public void sendToClient(Message message) {
+
+    private void sendToClient(Message message) {
         clientPW.println(message.toString());
     }
 
     private void list() {
         if (isPublisherCommand("list")) {
-            if(messages.isEmpty()){
+            if (messages.isEmpty()) {
                 clientPW.println("Non ci sono messaggi");
                 return;
             }
@@ -197,11 +195,11 @@ public class ClientHandler implements Runnable {
     }
 
     private void listAll() {
-        if(topic==null){
+        if (topic == null) {
             clientPW.println("Comando invalido");
             return;
         }
-        if(topic.getMessages().isEmpty()){
+        if (topic.getMessages().isEmpty()) {
             clientPW.println("Non ci sono messaggi");
             return;
         }
@@ -210,14 +208,21 @@ public class ClientHandler implements Runnable {
             clientPW.println(mess.toString());
         }
     }
-    public void quit(){
+
+    public void quit() {
         running = false;
         clientPW.println("quit");
     }
 
-    public void delMessage(Topic t,int id){
-        if(topic==t){
+    public synchronized void delMessage(Topic t, int id) {
+        if (topic == t) {
             messages.removeIf(m -> m.getID() == id);
         }
+    }
+
+    public synchronized void addMessage(Message mess){
+        //Salva il messaggio
+        messages.add(mess);
+        topic.addMessage(mess);
     }
 }

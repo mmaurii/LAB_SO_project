@@ -18,8 +18,6 @@ public class Server implements Runnable {
     final String DATE_TIME_FORMAT = "yyyy-MM-dd kk:mm:ss";
 
 
-
-
     public Server(int port) {
         this.port = port;
         Thread serverThread = new Thread(this);
@@ -157,24 +155,24 @@ public class Server implements Runnable {
         }
     }
 
-/**
- * Imposta il topic ispezionato se è presente
- *
- * @param topicName topic che si vuole ispezionare
- */
-public synchronized void inspect(String topicName) {
-    if (topicName == null) {
-        System.err.println("Inserisci il nome del topic da ispezionare.");
-    } else {
-        Topic topicToInspect = getTopicFromTitle(topicName);
-        if (topicToInspect == null) {
-            System.err.println("Il topic " + topicName + " non esiste.");
+    /**
+     * Imposta il topic ispezionato se è presente
+     *
+     * @param topicName topic che si vuole ispezionare
+     */
+    public void inspect(String topicName) {
+        if (topicName == null) {
+            System.err.println("Inserisci il nome del topic da ispezionare.");
         } else {
-            inspectedTopic = topicToInspect;
-            System.out.println("Ispezionando il topic: " + inspectedTopic.getTitle());
+            Topic topicToInspect = getTopicFromTitle(topicName);
+            if (topicToInspect == null) {
+                System.err.println("Il topic " + topicName + " non esiste.");
+            } else {
+                inspectedTopic = topicToInspect;
+                System.out.println("Ispezionando il topic: " + inspectedTopic.getTitle());
+            }
         }
     }
-}
 
 
     /**
@@ -195,24 +193,22 @@ public synchronized void inspect(String topicName) {
     /**
      * Elenca i messaggi in un topic, se ce ne sono
      */
-    public synchronized void listAll() {
+    public void listAll() {
         if (inspectedTopic == null) {
             System.err.println("Nessun topic in fase di ispezione.");
             return;
         }
 
-        synchronized (inspectedTopic) {
-            ArrayList<Message> messages = inspectedTopic.getMessages();
-            if (messages.isEmpty()) {
-                System.err.println("Non ci sono messaggi");
-            } else {
-                System.out.println("Sono stati inviati " + messages.size() + " messaggi in questo topic.");
+        ArrayList<Message> messages = inspectedTopic.getMessages();
+        if (messages.isEmpty()) {
+            System.err.println("Non ci sono messaggi");
+        } else {
+            System.out.println("Sono stati inviati " + messages.size() + " messaggi in questo topic.");
 
-                for (Message m : messages) {
-                    System.out.println("- ID: " + m.getID());
-                    System.out.println("  Testo: " + m.getText());
-                    System.out.println("  Data: " + m.getSendDate().format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)));
-                }
+            for (Message m : messages) {
+                System.out.println("- ID: " + m.getID());
+                System.out.println("  Testo: " + m.getText());
+                System.out.println("  Data: " + m.getSendDate().format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)));
             }
         }
     }
@@ -220,18 +216,17 @@ public synchronized void inspect(String topicName) {
     /**
      * Termina la sessione interattiva
      */
-    public synchronized void end() {
+    public void end() {
         inspectedTopic = null; // Resetta il topic ispezionato
-    
+
         // Notifica tutti i client in attesa
         for (ClientHandler client : clients) {
             synchronized (client.getSendLock()) {
-                client.getSendLock().notifyAll(); // Riattiva tutti i client in attesa
+                client.getSendLock().notify(); // Riattiva tutti i client in attesa
             }
         }
     }
-    
-    
+
 
     public Topic getInspectedTopic() {
         return inspectedTopic;
@@ -242,7 +237,7 @@ public synchronized void inspect(String topicName) {
      *
      * @param parameter ID del messaggio che si vuole cancellare
      */
-    private synchronized void delete(String parameter) {
+    private void delete(String parameter) {
         int id;
         try {
             id = Integer.parseInt(parameter);
@@ -255,13 +250,15 @@ public synchronized void inspect(String topicName) {
                 messages.removeIf(m -> m.getID() == id);
             }
 
-            for(ClientHandler ch: clients){
-                ch.delMessage(inspectedTopic,id);
+            for (ClientHandler ch : clients) {
+                ch.delMessage(inspectedTopic, id);
             }
             // confronto le dimensioni della lista per capire se è stato cancellato un elemento
             if (initialSize == messages.size()) {
                 System.err.println("Messaggio con id " + id + " non esiste");
-            } else System.out.println("Messaggio eliminato");
+            } else {
+                System.out.println("Messaggio eliminato");
+            }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input: " + parameter + " is not a valid integer.");
         }
@@ -279,11 +276,6 @@ public synchronized void inspect(String topicName) {
         topics.add(topic);
         return topic;
     }
-
-
-
-
-
 
 
     // Aggiunge un subscriber per un determinato topic
