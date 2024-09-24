@@ -41,14 +41,14 @@ public class ClientHandler implements Runnable {
                 }
                 // gestione comandi
                 String request = clientMessage.nextLine();
-                System.out.println("Request: " + request);
+                System.out.printf("<Ricevuto comando \"%s\">\n", request);
                 String command;
                 String parameter = "";
                 if (request.indexOf(' ') == -1) {
                     command = request;
                 } else {
                     command = request.substring(0, request.indexOf(' '));
-                    parameter = request.substring(request.indexOf(' ') + 1);
+                    parameter = request.substring(request.indexOf(' ') + 1).toLowerCase().trim();
                 }
                 switch (command) {
                     case "publish" -> publish(parameter);
@@ -65,7 +65,7 @@ public class ClientHandler implements Runnable {
             }
 
         } catch (IOException e) {
-            System.err.println("ClientHandler: IOException caught: " + e);
+            System.err.println("ClientHandler IOException: " + e);
         } finally {
             try {
                 if (socket != null && !socket.isClosed()) {
@@ -80,13 +80,11 @@ public class ClientHandler implements Runnable {
 
     private void publish(String parameter) {
         if (publishORSubscribe == null && !Objects.equals(parameter, "")) {
-            clientPW.printf("Registrato publisher a topic %s\n", parameter);
-            publishORSubscribe = false;
-            // <pubblicare il topic>
 
+            clientPW.printf("Registrato come publisher al topic %s\n", parameter);
+            publishORSubscribe = false;
             this.topic = server.addTopic(new Topic(parameter));
 
-            clientPW.printf("Pubblicato: %s\n", parameter);
         } else {
             clientPW.println("Comando invalido");
         }
@@ -100,8 +98,7 @@ public class ClientHandler implements Runnable {
             if (topic == null) {
                 clientPW.println("Il topic inserito non esiste");
             } else {
-                clientPW.printf("Registrato subscriber a topic %s\n", parameter);
-                clientPW.printf("Iscritto: %s\n", parameter);
+                clientPW.printf("Registrato come subscriber al topic %s\n", parameter);
                 publishORSubscribe = true;
             }
         } else {
@@ -114,12 +111,12 @@ public class ClientHandler implements Runnable {
         StringBuilder output;
 
         if (!lTopic.isEmpty()) {
-            output = new StringBuilder("Lista dei topic presenti:");
+            output = new StringBuilder("Topic presenti:");
             for (Topic t : lTopic) {
                 output.append("\n\t- ").append(t.getTitle());
             }
         } else {
-            output = new StringBuilder("non ci sono topic disponibili");
+            output = new StringBuilder("Non ci sono topic disponibili");
         }
 
         clientPW.println(output);
@@ -149,7 +146,7 @@ public class ClientHandler implements Runnable {
                     // Controlla se il topic in ispezione è lo stesso del topic attuale
                     if (server.getInspectedTopic() != null && server.getInspectedTopic().equals(topic)) {
                         // Messaggio in attesa
-                        clientPW.println("Messaggio in attesa: \"" + text + "\". Attendere la fine dell'ispezione.");
+                        clientPW.printf("Messaggio \"%s\" in attesa. Attendere la fine dell'ispezione.\n",text);
 
                         try {
                             // Mette in attesa il thread del client
@@ -188,8 +185,9 @@ public class ClientHandler implements Runnable {
                 return;
             }
             // funzionalità
+            clientPW.println("Messaggi:");
             for (Message mess : messages) {
-                clientPW.println(mess.toString());
+                clientPW.println(mess.replyString());
             }
         }
     }
@@ -204,8 +202,9 @@ public class ClientHandler implements Runnable {
             return;
         }
         // funzionalità
+        clientPW.println("Messaggi:");
         for (Message mess : topic.getMessages()) {
-            clientPW.println(mess.toString());
+            clientPW.println(mess.replyString());
         }
     }
 
@@ -220,7 +219,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public synchronized void addMessage(Message mess){
+    public synchronized void addMessage(Message mess) {
         //Salva il messaggio
         messages.add(mess);
         topic.addMessage(mess);

@@ -7,6 +7,7 @@ import java.util.Scanner;
 
 public class Sender extends Thread {
     Socket s;
+
     public Sender(Socket s) {
         this.s = s;
     }

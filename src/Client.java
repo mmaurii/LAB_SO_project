@@ -17,16 +17,16 @@ public class Client {
 
         try {
             Socket s = new Socket(host, port);
-            System.out.println("Connected to server");
+            System.out.println("Connesso al server");
 
-            System.out.println("Usage: info <key> to get info on a key");
+            //System.out.println("Usage: info <key> to get info on a key");
 
             /*
              * Delega la gestione di input/output a due thread separati, uno per inviare
              * messaggi e uno per leggerli
              *
              */
-            Sender sender =new Sender(s);
+            Sender sender = new Sender(s);
             Receiver receiver = new Receiver(s, sender);
             sender.start();
             receiver.start();
@@ -44,9 +44,9 @@ public class Client {
                 return;
             }
 
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             System.out.println("Error: inserisci un numero di porta valido");
-        }catch (IOException e) {
+        } catch (IOException e) {
             System.out.println("Error: Il server è irraggiungibile provare cambiando host e port number");
         }
     }

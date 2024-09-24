@@ -17,19 +17,16 @@ public class Receiver extends Thread {
     public void run() {
         try {
             BufferedReader from = new BufferedReader(new InputStreamReader(this.s.getInputStream()));
-            StringBuilder responseBuilder = new StringBuilder();
             String line;
             while ((line = from.readLine()) != null) {
-                responseBuilder.append(line).append("\n"); // aggiungi la prossima linea
-                System.out.println("Received: " + line);
+                System.out.println(line);
+                //System.out.println("Received: " + line);
                 if (line.equals("quit")) {
                     break;
                 }
             }
-            String response = responseBuilder.toString();
-            System.out.println("Complete response: " + response);
 
-        }catch (IOException e) {
+        } catch (IOException e) {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();
         } finally {

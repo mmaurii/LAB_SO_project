@@ -2,7 +2,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -15,8 +14,6 @@ public class Server implements Runnable {
     private boolean running = true;
     final int port;
     private ServerSocket serverSocket = null;
-    final String DATE_TIME_FORMAT = "yyyy-MM-dd kk:mm:ss";
-
 
     public Server(int port) {
         this.port = port;
@@ -33,7 +30,8 @@ public class Server implements Runnable {
         Scanner input = new Scanner(System.in);
         while (running) {
             if (inspectedTopic == null) System.out.println("\n> Inserisci comando");
-            else System.out.println("Inserisci comando (ispezionando " + inspectedTopic.getTitle() + ")");
+            else System.out.printf("Inserisci comando (ispezionando topic \"%s\")\n",
+                    inspectedTopic.getTitle());
             String command = input.nextLine();
             String[] parts = command.split(" ");
             if (inspectedTopic == null) {
@@ -68,7 +66,7 @@ public class Server implements Runnable {
             while (!Thread.interrupted()) {
                 try {
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("Nuova connessione da " + clientSocket.getInetAddress());
+                    System.out.printf("Nuova connessione da %s\n", clientSocket.getInetAddress());
                     if (!Thread.interrupted()) {
                         // crea un nuovo thread per il nuovo socket
                         ClientHandler ch = new ClientHandler(clientSocket, this);
@@ -104,7 +102,7 @@ public class Server implements Runnable {
             case "quit" -> quit();
             case "show" -> show();
             case "inspect" -> inspect(parameter);
-            default -> System.err.println("Comando non riconosciuto: " + command);
+            default -> System.out.printf("Comando non riconosciuto: %s\n", command);
         }
     }
 
@@ -119,7 +117,7 @@ public class Server implements Runnable {
             case "listall" -> listAll();
             case "end" -> end();
             case "delete" -> delete(parameter);
-            default -> System.err.println("Comando non riconosciuto: " + command);
+            default -> System.out.printf("Comando non riconosciuto: %s\n", command);
         }
     }
 
@@ -130,7 +128,7 @@ public class Server implements Runnable {
         running = false;
         System.out.println("Interruzione dei client connessi");
         for (ClientHandler client : this.clients) {
-            System.out.println("Interruzione client " + client);
+            System.out.printf("Interruzione client %s\n", client);
             client.quit();
         }
         try {
@@ -146,11 +144,11 @@ public class Server implements Runnable {
      * Mostra i topic, se ce ne sono
      */
     private void show() {
-        if (topics.isEmpty()) System.err.println("Non sono presenti topic");
+        if (topics.isEmpty()) System.out.println("Non sono presenti topic");
         else {
-            System.out.println("Topics:");
+            System.out.println("Topic presenti:");
             for (Topic t : topics) {
-                System.out.println("\t" + "- " + t.getTitle());
+                System.out.printf("\t- %s\n", t.getTitle());
             }
         }
     }
@@ -162,14 +160,14 @@ public class Server implements Runnable {
      */
     public void inspect(String topicName) {
         if (topicName == null) {
-            System.err.println("Inserisci il nome del topic da ispezionare.");
+            System.out.println("Inserisci il nome del topic da ispezionare.");
         } else {
             Topic topicToInspect = getTopicFromTitle(topicName);
             if (topicToInspect == null) {
-                System.err.println("Il topic " + topicName + " non esiste.");
+                System.out.printf("Il topic %s non esiste.\n", topicName);
             } else {
                 inspectedTopic = topicToInspect;
-                System.out.println("Ispezionando il topic: " + inspectedTopic.getTitle());
+                System.out.printf("Ispezionando il topic: %s\n", inspectedTopic.getTitle());
             }
         }
     }
@@ -195,20 +193,17 @@ public class Server implements Runnable {
      */
     public void listAll() {
         if (inspectedTopic == null) {
-            System.err.println("Nessun topic in fase di ispezione.");
+            System.out.println("Nessun topic in fase di ispezione.");
             return;
         }
 
         ArrayList<Message> messages = inspectedTopic.getMessages();
         if (messages.isEmpty()) {
-            System.err.println("Non ci sono messaggi");
+            System.out.println("Non ci sono messaggi");
         } else {
-            System.out.println("Sono stati inviati " + messages.size() + " messaggi in questo topic.");
-
+            System.out.printf("Sono stati inviati %s messaggi in questo topic.\n", messages.size());
             for (Message m : messages) {
-                System.out.println("- ID: " + m.getID());
-                System.out.println("  Testo: " + m.getText());
-                System.out.println("  Data: " + m.getSendDate().format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)));
+                System.out.println(m.replyString());
             }
         }
     }
@@ -255,12 +250,12 @@ public class Server implements Runnable {
             }
             // confronto le dimensioni della lista per capire se è stato cancellato un elemento
             if (initialSize == messages.size()) {
-                System.err.println("Messaggio con id " + id + " non esiste");
+                System.out.printf("Messaggio con id %s non esiste\n", id);
             } else {
                 System.out.println("Messaggio eliminato");
             }
         } catch (NumberFormatException e) {
-            System.out.println("Invalid input: " + parameter + " is not a valid integer.");
+            System.out.printf("%s non è un valore valido\n", parameter);
         }
 
     }

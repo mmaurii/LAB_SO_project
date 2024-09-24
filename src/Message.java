@@ -6,7 +6,7 @@ public class Message {
     private int id;
     private String text;
     private LocalDateTime sendDate;
-    final String DATE_TIME_FORMAT = "yyyy-MM-dd kk:mm:ss";
+    final String DATE_TIME_FORMAT = "dd/MM/yyyy - kk:mm:ss";
 
     public Message(String text) {
         this.id = ++idCounter;
@@ -28,6 +28,12 @@ public class Message {
 
     @Override
     public String toString() {
-        return "ID: " + id + "\nTesto: " + text + "\nData: " + sendDate.format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT));
+        return "ID: " + id + "\nTesto: " + text + "\nData: " +
+                sendDate.format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT));
+    }
+
+    public String replyString() {
+        return String.format("\t- ID: %s\n\t  Testo: %s\n\t  Data: %s",
+                id, text, sendDate.format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)));
     }
 }
