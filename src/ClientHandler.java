@@ -60,7 +60,8 @@ public class ClientHandler implements Runnable {
                     case "list" -> list();
 
                     case "listall" -> listAll();
-                    default -> clientPW.println("Comando invalido");
+                    default -> clientPW.printf("Comando non riconosciuto: %s\n", command);
+
                 }
             }
 
@@ -79,31 +80,43 @@ public class ClientHandler implements Runnable {
     }
 
     private void publish(String parameter) {
-        if (publishORSubscribe == null && !Objects.equals(parameter, "")) {
 
-            clientPW.printf("Registrato come publisher al topic %s\n", parameter);
-            publishORSubscribe = false;
-            this.topic = server.addTopic(new Topic(parameter));
-
-        } else {
-            clientPW.println("Comando invalido");
+        if (publishORSubscribe != null) {
+            clientPW.println("Non puoi più eseguire questo comando");
+            return;
         }
+
+        if (Objects.equals(parameter, "")) {
+            clientPW.println("Inserisci il topic");
+            return;
+        }
+
+        clientPW.printf("Registrato come publisher al topic %s\n", parameter);
+        publishORSubscribe = false;
+        this.topic = server.addTopic(new Topic(parameter));
     }
 
+    // false = publisher, true = subscriber
     private void subscribe(String parameter) {
-        if (publishORSubscribe == null && !Objects.equals(parameter, "")) {
-            this.topic = server.addSubscriber(this, new Topic(parameter));
-
-            //controllo l'esistenza del topic
-            if (topic == null) {
-                clientPW.println("Il topic inserito non esiste");
-            } else {
-                clientPW.printf("Registrato come subscriber al topic %s\n", parameter);
-                publishORSubscribe = true;
-            }
-        } else {
-            clientPW.println("Comando invalido");
+        if (publishORSubscribe != null) {
+            clientPW.println("Non puoi più eseguire questo comando");
+            return;
         }
+
+        if (Objects.equals(parameter, "")) {
+            clientPW.println("Inserisci il topic");
+            return;
+        }
+
+        this.topic = server.addSubscriber(this, new Topic(parameter));
+
+        if (topic == null) {
+            clientPW.println("Il topic inserito non esiste");
+            return;
+        }
+        clientPW.printf("Registrato come subscriber al topic %s\n", parameter);
+        publishORSubscribe = true;
+
     }
 
     private void show() {
@@ -126,27 +139,32 @@ public class ClientHandler implements Runnable {
     private boolean isPublisherCommand(String command) {
 
         if (publishORSubscribe == null) {
-            clientPW.println("Comando invalido");
+            clientPW.println("Devi essere registrato come publisher o subscriber per inviare questo comando");
             return false;
         }
 
-        if (command.equals("send") && !publishORSubscribe) return true;
-        if (command.equals("list") && !publishORSubscribe) return true;
+        if (publishORSubscribe) {
+            clientPW.println("Devi essere registrato come publisher per inviare questo comando");
+            return false;
+        }
 
-        clientPW.println("Comando invalido");
+        if (command.equals("send")) return true;
+        if (command.equals("list")) return true;
+
+        clientPW.println("Comando inesistente");
         return false;
     }
 
     private void send(String text) {
         if (isPublisherCommand("send")) {
             if (text.isEmpty()) {
-                clientPW.println("Manca il parametro");
+                clientPW.println("Non puoi inviare un messaggio vuoto");
             } else {
                 synchronized (sendLock) {
                     // Controlla se il topic in ispezione è lo stesso del topic attuale
                     if (server.getInspectedTopic() != null && server.getInspectedTopic().equals(topic)) {
                         // Messaggio in attesa
-                        clientPW.printf("Messaggio \"%s\" in attesa. Attendere la fine dell'ispezione.\n",text);
+                        clientPW.printf("Messaggio \"%s\" in attesa. Attendere la fine dell'ispezione.\n", text);
 
                         try {
                             // Mette in attesa il thread del client
@@ -194,7 +212,8 @@ public class ClientHandler implements Runnable {
 
     private void listAll() {
         if (topic == null) {
-            clientPW.println("Comando invalido");
+            clientPW.println("Devi registrarti come publisher o subscriber " +
+                    "prima di poter eseguire questo comando");
             return;
         }
         if (topic.getMessages().isEmpty()) {
