@@ -146,65 +146,88 @@ public class ClientHandler implements Runnable {
                     // Controlla se il topic in ispezione è lo stesso del topic attuale
                     if (server.getInspectedTopic() != null && server.getInspectedTopic().equals(topic)) {
                         // Messaggio in attesa
-                        clientPW.printf("Messaggio \"%s\" in attesa. Attendere la fine dell'ispezione.\n",text);
+                        clientPW.printf("Messaggio \"%s\" in attesa. Il server è in fase d'ispezione.\n", text);
 
-                        try {
-                            // Mette in attesa il thread del client
-                            sendLock.wait();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt(); // Ripristina lo stato di interruzione
-                            clientPW.println("Invio messaggio interrotto.");
-                            return;
-                        }
+//                        try {
+////                             Mette in attesa il thread del client
+//                            sendLock.wait();
+//                        } catch (InterruptedException e) {
+//                            Thread.currentThread().interrupt(); // Ripristina lo stato di interruzione
+//                            clientPW.println("Invio messaggio interrotto.");
+//                            return;
+//                        }
                     }
 
                     //creo il messaggio
                     Message mess = new Message(text);
-                    // Invia il messaggio a tutti i subscriber
-                    for (ClientHandler c : topic.getClients()) {
-                        c.sendToClient(mess);
+                    //controllo se il server è in fase di ispezione
+                    if (server.isInspectedLock()) {
+                        Command command = new Command("send", mess, this);
+                        server.addCommand(command);
+                    } else {
+                        // Invia il messaggio a tutti i subscriber
+                        sendToClient(mess);
+
+                        addMessage(mess);
+
+                        clientPW.printf("Inviato messaggio \"%s\"\n", text);
                     }
-
-                    addMessage(mess);
-
-                    clientPW.printf("Inviato messaggio \"%s\"\n", text);
                 }
             }
         }
     }
 
 
-    private void sendToClient(Message message) {
-        clientPW.println(message.toString());
+    public synchronized void sendToClient(Message message) {
+        // Invia il messaggio a tutti i subscriber
+        for (ClientHandler c : topic.getClients()) {
+            c.forward(message.toString());
+        }
+
+        addMessage(message);
     }
 
-    private void list() {
+    private void forward(String text){
+        clientPW.println(text);
+    }
+
+    public void list() {
         if (isPublisherCommand("list")) {
-            if (messages.isEmpty()) {
+            //controllo se il server è in fase di ispezione
+            if (server.isInspectedLock()) {
+                server.addCommand(new Command("list", this));
+            } else {
+                if (messages.isEmpty()) {
+                    clientPW.println("Non ci sono messaggi");
+                    return;
+                }
+                // funzionalità
+                clientPW.println("Messaggi:");
+                for (Message mess : messages) {
+                    clientPW.println(mess.replyString());
+                }
+            }
+        }
+    }
+
+    public void listAll() {
+        if (server.isInspectedLock()) {
+
+            server.addCommand(new Command("listall", this));
+        } else {
+            if (topic == null) {
+                clientPW.println("Comando invalido");
+                return;
+            }
+            if (topic.getMessages().isEmpty()) {
                 clientPW.println("Non ci sono messaggi");
                 return;
             }
             // funzionalità
             clientPW.println("Messaggi:");
-            for (Message mess : messages) {
+            for (Message mess : topic.getMessages()) {
                 clientPW.println(mess.replyString());
             }
-        }
-    }
-
-    private void listAll() {
-        if (topic == null) {
-            clientPW.println("Comando invalido");
-            return;
-        }
-        if (topic.getMessages().isEmpty()) {
-            clientPW.println("Non ci sono messaggi");
-            return;
-        }
-        // funzionalità
-        clientPW.println("Messaggi:");
-        for (Message mess : topic.getMessages()) {
-            clientPW.println(mess.replyString());
         }
     }
 

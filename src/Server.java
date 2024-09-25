@@ -14,6 +14,18 @@ public class Server implements Runnable {
     private boolean running = true;
     final int port;
     private ServerSocket serverSocket = null;
+    LinkedList<Command> commandsBuffer = new LinkedList<>();
+    //    LinkedList<Message> messagesBuffer = new LinkedList<>();
+    private Boolean inspectedLock = false; // Oggetto di sincronizzazione
+
+    // Getter per sendLock
+    public synchronized Boolean isInspectedLock() {
+        return inspectedLock;
+    }
+
+    private synchronized void changeStatusInspectedLock() {
+        this.inspectedLock = !inspectedLock;
+    }
 
     public Server(int port) {
         this.port = port;
@@ -166,12 +178,13 @@ public class Server implements Runnable {
             if (topicToInspect == null) {
                 System.out.printf("Il topic %s non esiste.\n", topicName);
             } else {
+//                entro in fase di ispezione
+                changeStatusInspectedLock();
                 inspectedTopic = topicToInspect;
                 System.out.printf("Ispezionando il topic: %s\n", inspectedTopic.getTitle());
             }
         }
     }
-
 
     /**
      * Restituisce il topic dato il titolo
@@ -220,8 +233,25 @@ public class Server implements Runnable {
                 client.getSendLock().notify(); // Riattiva tutti i client in attesa
             }
         }
+
+        //processo tutti i comandi ricevuti
+        executeOperation();
+
+//        esco dalla fase di ispezione
+        changeStatusInspectedLock();
     }
 
+    private void executeOperation() {
+        synchronized (commandsBuffer) {
+            for (Command command : commandsBuffer) {
+                switch (command.getCommand()) {
+                    case "list" -> command.getSender().list();
+                    case "listall" -> command.getSender().listAll();
+                    case "send" -> command.getSender().sendToClient(command.getMessage());
+                }
+            }
+        }
+    }
 
     public Topic getInspectedTopic() {
         return inspectedTopic;
@@ -282,5 +312,9 @@ public class Server implements Runnable {
             }
         }
         return null;
+    }
+
+    public synchronized void addCommand(Command command) {
+        this.commandsBuffer.addLast(command);
     }
 }
