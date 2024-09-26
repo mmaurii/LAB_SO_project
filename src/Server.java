@@ -15,7 +15,6 @@ public class Server implements Runnable {
     final int port;
     private ServerSocket serverSocket = null;
     LinkedList<Command> commandsBuffer = new LinkedList<>();
-    //    LinkedList<Message> messagesBuffer = new LinkedList<>();
     private Boolean inspectedLock = false; // Oggetto di sincronizzazione
 
     // Getter per sendLock
@@ -204,7 +203,7 @@ public class Server implements Runnable {
     /**
      * Elenca i messaggi in un topic, se ce ne sono
      */
-    public void listAll() {
+    private void listAll() {
         if (inspectedTopic == null) {
             System.out.println("Nessun topic in fase di ispezione.");
             return;
@@ -227,12 +226,12 @@ public class Server implements Runnable {
     public void end() {
         inspectedTopic = null; // Resetta il topic ispezionato
 
-        // Notifica tutti i client in attesa
-        for (ClientHandler client : clients) {
-            synchronized (client.getSendLock()) {
-                client.getSendLock().notify(); // Riattiva tutti i client in attesa
-            }
-        }
+//        // Notifica tutti i client in attesa
+//        for (ClientHandler client : clients) {
+//            synchronized (client.getSendLock()) {
+//                client.getSendLock().notify(); // Riattiva tutti i client in attesa
+//            }
+//        }
 
         //processo tutti i comandi ricevuti
         executeOperation();
@@ -245,15 +244,17 @@ public class Server implements Runnable {
         synchronized (commandsBuffer) {
             for (Command command : commandsBuffer) {
                 switch (command.getCommand()) {
-                    case "list" -> command.getSender().list();
-                    case "listall" -> command.getSender().listAll();
-                    case "send" -> command.getSender().sendToClient(command.getMessage());
+                    case "list" -> command.getSender().listExecute();
+                    case "listall" -> command.getSender().listallExecute();
+                    case "send" -> command.getSender().sendExecute(command.getMessage());
                 }
             }
+
+            commandsBuffer.clear();
         }
     }
 
-    public Topic getInspectedTopic() {
+    public synchronized Topic getInspectedTopic() {
         return inspectedTopic;
     }
 

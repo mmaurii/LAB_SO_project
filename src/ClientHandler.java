@@ -160,43 +160,31 @@ public class ClientHandler implements Runnable {
             if (text.isEmpty()) {
                 clientPW.println("Non puoi inviare un messaggio vuoto");
             } else {
-                synchronized (sendLock) {
+//                synchronized (sendLock) {
+                //creo il messaggio
+                Message mess = new Message(text);
+                //controllo se il server è in fase di ispezione
+                if (server.isInspectedLock()) {
                     // Controlla se il topic in ispezione è lo stesso del topic attuale
                     if (server.getInspectedTopic() != null && server.getInspectedTopic().equals(topic)) {
                         // Messaggio in attesa
                         clientPW.printf("Messaggio \"%s\" in attesa. Il server è in fase d'ispezione.\n", text);
-
-//                        try {
-////                             Mette in attesa il thread del client
-//                            sendLock.wait();
-//                        } catch (InterruptedException e) {
-//                            Thread.currentThread().interrupt(); // Ripristina lo stato di interruzione
-//                            clientPW.println("Invio messaggio interrotto.");
-//                            return;
-//                        }
                     }
 
-                    //creo il messaggio
-                    Message mess = new Message(text);
-                    //controllo se il server è in fase di ispezione
-                    if (server.isInspectedLock()) {
-                        Command command = new Command("send", mess, this);
-                        server.addCommand(command);
-                    } else {
-                        // Invia il messaggio a tutti i subscriber
-                        sendToClient(mess);
-
-                        addMessage(mess);
-
-                        clientPW.printf("Inviato messaggio \"%s\"\n", text);
-                    }
+                    Command command = new Command("send", mess, this);
+                    server.addCommand(command);
+                } else {
+                    // Invia il messaggio a tutti i subscriber
+                    sendExecute(mess);
+                    clientPW.printf("Inviato messaggio \"%s\"\n", text);
                 }
+//                }
             }
         }
     }
 
 
-    public synchronized void sendToClient(Message message) {
+    public synchronized void sendExecute(Message message) {
         // Invia il messaggio a tutti i subscriber
         for (ClientHandler c : topic.getClients()) {
             c.forward(message.toString());
@@ -205,48 +193,55 @@ public class ClientHandler implements Runnable {
         addMessage(message);
     }
 
-    private void forward(String text){
+    private void forward(String text) {
         clientPW.println(text);
     }
 
-    public void list() {
+    private void list() {
         if (isPublisherCommand("list")) {
             //controllo se il server è in fase di ispezione
             if (server.isInspectedLock()) {
                 server.addCommand(new Command("list", this));
             } else {
-                if (messages.isEmpty()) {
-                    clientPW.println("Non ci sono messaggi");
-                    return;
-                }
-                // funzionalità
-                clientPW.println("Messaggi:");
-                for (Message mess : messages) {
-                    clientPW.println(mess.replyString());
-                }
+                listExecute();
             }
         }
     }
 
-    public void listAll() {
-        if (server.isInspectedLock()) {
+    public synchronized void listExecute() {
+        if (messages.isEmpty()) {
+            clientPW.println("Non ci sono messaggi");
+            return;
+        }
+        // funzionalità
+        clientPW.println("Messaggi:");
+        for (Message mess : messages) {
+            clientPW.println(mess.replyString());
+        }
+    }
 
+    private void listAll() {
+        if (server.isInspectedLock()) {
             server.addCommand(new Command("listall", this));
         } else {
-            if (topic == null) {
-                clientPW.println("Devi registrarti come publisher o subscriber " +
+            listallExecute();
+        }
+    }
+
+    public synchronized void listallExecute() {
+        if (topic == null) {
+            clientPW.println("Devi registrarti come publisher o subscriber " +
                     "prima di poter eseguire questo comando");
-                return;
-            }
-            if (topic.getMessages().isEmpty()) {
-                clientPW.println("Non ci sono messaggi");
-                return;
-            }
-            // funzionalità
-            clientPW.println("Messaggi:");
-            for (Message mess : topic.getMessages()) {
-                clientPW.println(mess.replyString());
-            }
+            return;
+        }
+        if (topic.getMessages().isEmpty()) {
+            clientPW.println("Non ci sono messaggi");
+            return;
+        }
+        // funzionalità
+        clientPW.println("Messaggi:");
+        for (Message mess : topic.getMessages()) {
+            clientPW.println(mess.replyString());
         }
     }
 
