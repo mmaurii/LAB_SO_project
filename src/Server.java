@@ -226,32 +226,18 @@ public class Server implements Runnable {
     public void end() {
         inspectedTopic = null; // Resetta il topic ispezionato
 
-//        // Notifica tutti i client in attesa
-//        for (ClientHandler client : clients) {
-//            synchronized (client.getSendLock()) {
-//                client.getSendLock().notify(); // Riattiva tutti i client in attesa
-//            }
-//        }
-
-        //processo tutti i comandi ricevuti
+        //processo tutti i comandi ricevuti durante l'ispezione
         executeOperation();
 
 //        esco dalla fase di ispezione
         changeStatusInspectedLock();
     }
 
-    private void executeOperation() {
-        synchronized (commandsBuffer) {
-            for (Command command : commandsBuffer) {
-                switch (command.getCommand()) {
-                    case "list" -> command.getSender().listExecute();
-                    case "listall" -> command.getSender().listallExecute();
-                    case "send" -> command.getSender().sendExecute(command.getMessage());
-                }
-            }
-
-            commandsBuffer.clear();
+    private synchronized void executeOperation() {
+        for (Command command : commandsBuffer) {
+            command.execute();
         }
+        commandsBuffer.clear();
     }
 
     public synchronized Topic getInspectedTopic() {

@@ -14,27 +14,11 @@ public class Command {
         this.sender = sender;
     }
 
-    public Message getMessage() {
-        return message;
-    }
-
-    public void setMessage(Message message) {
-        this.message = message;
-    }
-
-    public ClientHandler getSender() {
-        return sender;
-    }
-
-    public void setSender(ClientHandler sender) {
-        this.sender = sender;
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public void setCommand(String command) {
-        this.command = command;
+    public void execute() {
+        switch (command) {
+            case "list" -> sender.listExecute();
+            case "listall" -> sender.listallExecute();
+            case "send" -> sender.sendExecute(message);
+        }
     }
 }

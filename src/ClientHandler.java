@@ -14,11 +14,6 @@ public class ClientHandler implements Runnable {
     private boolean running = true;
     private final Object sendLock = new Object(); // Oggetto di sincronizzazione
 
-    // Getter per sendLock
-    public Object getSendLock() {
-        return sendLock;
-    }
-
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
         this.server = server;
@@ -55,13 +50,10 @@ public class ClientHandler implements Runnable {
                     case "subscribe" -> subscribe(parameter);
                     case "show" -> show();
                     case "quit" -> quit();
-
                     case "send" -> send(parameter);
                     case "list" -> list();
-
                     case "listall" -> listAll();
                     default -> clientPW.printf("Comando non riconosciuto: %s\n", command);
-
                 }
             }
 
@@ -80,7 +72,6 @@ public class ClientHandler implements Runnable {
     }
 
     private void publish(String parameter) {
-
         if (publishORSubscribe != null) {
             clientPW.println("Non puoi più eseguire questo comando");
             return;
@@ -116,7 +107,6 @@ public class ClientHandler implements Runnable {
         }
         clientPW.printf("Registrato come subscriber al topic %s\n", parameter);
         publishORSubscribe = true;
-
     }
 
     private void show() {
@@ -137,7 +127,6 @@ public class ClientHandler implements Runnable {
 
     // false = publisher, true = subscriber
     private boolean isPublisherCommand(String command) {
-
         if (publishORSubscribe == null) {
             clientPW.println("Devi essere registrato come publisher o subscriber per inviare questo comando");
             return false;
@@ -165,26 +154,24 @@ public class ClientHandler implements Runnable {
                 Message mess = new Message(text);
                 //controllo se il server è in fase di ispezione
                 if (server.isInspectedLock()) {
-                    // Controlla se il topic in ispezione è lo stesso del topic attuale
-                    if (server.getInspectedTopic() != null && server.getInspectedTopic().equals(topic)) {
+                    // Controlla se il topic in ispezione è lo stesso del topic di questo client
+                    if (server.getInspectedTopic().equals(topic)) {
                         // Messaggio in attesa
                         clientPW.printf("Messaggio \"%s\" in attesa. Il server è in fase d'ispezione.\n", text);
+                        Command command = new Command("send", mess, this);
+                        server.addCommand(command);
+                        return;
                     }
-
-                    Command command = new Command("send", mess, this);
-                    server.addCommand(command);
-                } else {
-                    // Invia il messaggio a tutti i subscriber
-                    sendExecute(mess);
-                    clientPW.printf("Inviato messaggio \"%s\"\n", text);
                 }
+                // Invia il messaggio a tutti i subscriber
+                sendExecute(mess);
+                clientPW.printf("Inviato messaggio \"%s\"\n", text);
 //                }
             }
         }
     }
 
-
-    public synchronized void sendExecute(Message message) {
+    public void sendExecute(Message message) {
         // Invia il messaggio a tutti i subscriber
         for (ClientHandler c : topic.getClients()) {
             c.forward(message.toString());
@@ -201,14 +188,18 @@ public class ClientHandler implements Runnable {
         if (isPublisherCommand("list")) {
             //controllo se il server è in fase di ispezione
             if (server.isInspectedLock()) {
-                server.addCommand(new Command("list", this));
-            } else {
-                listExecute();
+                // Controlla se il topic in ispezione è lo stesso del topic di questo client
+                if (server.getInspectedTopic().equals(topic)) {
+                    clientPW.printf("Comando \"list\" in attesa. Il server è in fase d'ispezione.\n");
+                    server.addCommand(new Command("list", this));
+                    return;
+                }
             }
+            listExecute();
         }
     }
 
-    public synchronized void listExecute() {
+    public void listExecute() {
         if (messages.isEmpty()) {
             clientPW.println("Non ci sono messaggi");
             return;
@@ -221,19 +212,23 @@ public class ClientHandler implements Runnable {
     }
 
     private void listAll() {
-        if (server.isInspectedLock()) {
-            server.addCommand(new Command("listall", this));
-        } else {
-            listallExecute();
-        }
-    }
-
-    public synchronized void listallExecute() {
         if (topic == null) {
             clientPW.println("Devi registrarti come publisher o subscriber " +
                     "prima di poter eseguire questo comando");
             return;
         }
+        if (server.isInspectedLock()) {
+            // Controlla se il topic in ispezione è lo stesso del topic di questo client
+            if (server.getInspectedTopic().equals(topic)) {
+                clientPW.printf("Comando \"listall\" in attesa. Il server è in fase d'ispezione.\n");
+                server.addCommand(new Command("listall", this));
+                return;
+            }
+        }
+        listallExecute();
+    }
+
+    public void listallExecute() {
         if (topic.getMessages().isEmpty()) {
             clientPW.println("Non ci sono messaggi");
             return;
@@ -245,9 +240,11 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public void quit() {
+    public synchronized void quit() {
         running = false;
+
         clientPW.println("quit");
+        clientPW.close();
     }
 
     public synchronized void delMessage(Topic t, int id) {
