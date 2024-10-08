@@ -3,10 +3,10 @@ import java.time.format.DateTimeFormatter;
 
 public class Message {
     private static int idCounter = 0;
-//    private ClientHandler sender;
-    private int id;
-    private String text;
-    private LocalDateTime sendDate;
+    // private ClientHandler sender;
+    private final int id;
+    private final String text;
+    private final LocalDateTime sendDate;
     final String DATE_TIME_FORMAT = "dd/MM/yyyy - kk:mm:ss";
 
     public Message(String text) {
@@ -16,21 +16,12 @@ public class Message {
 //        this.sender = sender;
     }
 
+    /**
+     * @return restituisce l'id del messaggio
+     */
     public int getID() {
         return id;
     }
-
-    public String getText() {
-        return text;
-    }
-
-    public LocalDateTime getSendDate() {
-        return sendDate;
-    }
-
-//    public ClientHandler getSender() {
-//        return sender;
-//    }
 
     @Override
     public String toString() {
@@ -38,6 +29,10 @@ public class Message {
                 sendDate.format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT));
     }
 
+    /**
+     * @return restituisce la stringa formattata, usata
+     * nelle risposte ai comandi inviati
+     */
     public String replyString() {
         return String.format("\t- ID: %s\n\t  Testo: %s\n\t  Data: %s",
                 id, text, sendDate.format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)));

@@ -17,21 +17,25 @@ public class Server implements Runnable {
     LinkedList<Command> commandsBuffer = new LinkedList<>();
     private Boolean inspectedLock = false; // Oggetto di sincronizzazione
 
-    // Getter per sendLock
-    public synchronized Boolean isInspectedLock() {
-        return inspectedLock;
-    }
-
-    private synchronized void changeStatusInspectedLock() {
-        this.inspectedLock = !inspectedLock;
-    }
-
     public Server(int port) {
         this.port = port;
         Thread serverThread = new Thread(this);
         serverThread.start();
         this.commandLoop();
 
+    }
+    /**
+     * @return restituisce true se il server è in fase di ispezione
+     */
+    public synchronized Boolean isInspectedLock() {
+        return inspectedLock;
+    }
+
+    /**
+     * Cambia lo stato di ispezione del server
+     */
+    private synchronized void changeStatusInspectedLock() {
+        this.inspectedLock = !inspectedLock;
     }
 
     /**
@@ -63,6 +67,9 @@ public class Server implements Runnable {
         create();
     }
 
+    /**
+     * @return i topic presenti sul server
+     */
     public HashSet<Topic> getTopics() {
         return topics;
     }
@@ -177,7 +184,7 @@ public class Server implements Runnable {
             if (topicToInspect == null) {
                 System.out.printf("Il topic %s non esiste.\n", topicName);
             } else {
-//                entro in fase di ispezione
+                // entro in fase di ispezione
                 changeStatusInspectedLock();
                 inspectedTopic = topicToInspect;
                 System.out.printf("Ispezionando il topic: %s\n", inspectedTopic.getTitle());
@@ -186,10 +193,10 @@ public class Server implements Runnable {
     }
 
     /**
-     * Restituisce il topic dato il titolo
+     * Restituisce il topic dato il suo titolo
      *
      * @param title titolo del topic da restituire
-     * @return Topic
+     * @return il topic richiesto, null se non è stato trovato
      */
     private Topic getTopicFromTitle(String title) {
         for (Topic t : topics) {
@@ -201,7 +208,7 @@ public class Server implements Runnable {
     }
 
     /**
-     * Elenca i messaggi in un topic, se ce ne sono
+     * Elenca tutti i messaggi nel topic della sezione interattiva
      */
     private void listAll() {
         if (inspectedTopic == null) {
@@ -224,15 +231,17 @@ public class Server implements Runnable {
      * Termina la sessione interattiva
      */
     public void end() {
-        inspectedTopic = null; // Resetta il topic ispezionato
-
+        // Resetta il topic ispezionato
+        inspectedTopic = null;
         //processo tutti i comandi ricevuti durante l'ispezione
         executeOperation();
-
-//        esco dalla fase di ispezione
+        // esco dalla fase di ispezione
         changeStatusInspectedLock();
     }
 
+    /**
+     * Esegue i comandi presenti sul commandBuffer
+     */
     private synchronized void executeOperation() {
         for (Command command : commandsBuffer) {
             command.execute();
@@ -240,6 +249,9 @@ public class Server implements Runnable {
         commandsBuffer.clear();
     }
 
+    /**
+     * @return restituisce il topic della sessione interattiva/ispezionato
+     */
     public synchronized Topic getInspectedTopic() {
         return inspectedTopic;
     }
@@ -277,7 +289,11 @@ public class Server implements Runnable {
 
     }
 
-    // Aggiunge un nuovo topic
+    /**
+     * Aggiunge un topic se non è presente
+     *
+     * @param topic topic che si vuole aggiungere
+     */
     public synchronized Topic addTopic(Topic topic) {
         for (Topic t : topics) {
             if (topic.equals(t)) {
@@ -290,7 +306,13 @@ public class Server implements Runnable {
     }
 
 
-    // Aggiunge un subscriber per un determinato topic
+    /**
+     * Aggiunge un subscriber a un topic
+     *
+     * @param client subscriber da iscrivere
+     * @param topic topic a cui iscrivere il subscriber
+     * @return il topic a cui si è iscritto il client, null se non è presente quel topic
+     */
     public synchronized Topic addSubscriber(ClientHandler client, Topic topic) {
         for (Topic t : topics) {
             if (topic.equals(t)) {
@@ -301,6 +323,11 @@ public class Server implements Runnable {
         return null;
     }
 
+    /**
+     * Aggiunge un commando al commandBuffer
+     *
+     * @param command comando da aggiungere
+     */
     public synchronized void addCommand(Command command) {
         this.commandsBuffer.addLast(command);
     }

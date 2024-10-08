@@ -17,12 +17,9 @@ public class Client {
             Socket s = new Socket(host, port);
             System.out.println("Connesso al server");
 
-            //System.out.println("Usage: info <key> to get info on a key");
-
             /*
              * Delega la gestione di input/output a due thread separati, uno per inviare
              * messaggi e uno per leggerli
-             *
              */
             Sender sender = new Sender(s);
             Receiver receiver = new Receiver(s, sender);
@@ -36,12 +33,8 @@ public class Client {
                 s.close();
                 System.out.println("Socket closed.");
             } catch (InterruptedException e) {
-                /*
-                 * se qualcuno interrompe questo thread nel frattempo, terminiamo
-                 */
-                return;
+                System.err.println("Thread Interrotto");
             }
-
         } catch (IllegalArgumentException e) {
             System.out.println("Error: inserisci un numero di porta valido");
         } catch (IOException e) {

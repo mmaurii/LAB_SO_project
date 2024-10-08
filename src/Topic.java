@@ -1,43 +1,41 @@
 import java.util.ArrayList;
 
 public class Topic {
-    private String title;
-    private ArrayList<Message> messages = new ArrayList<>();
-    private ArrayList<ClientHandler> clients = new ArrayList<>();
-
-
-    public ArrayList<ClientHandler> getClients() {
-        return clients;
-    }
-
-    public void setClients(ArrayList<ClientHandler> clients) {
-        this.clients = clients;
-    }
-
-    public void setMessages(ArrayList<Message> messages) {
-        this.messages = messages;
-    }
+    private final String title;
+    private final ArrayList<Message> messages = new ArrayList<>();
+    private final ArrayList<ClientHandler> clients = new ArrayList<>();
 
     public Topic(String title) {
         this.title = title;
     }
 
+    public ArrayList<ClientHandler> getClients() {
+        return clients;
+    }
+    /**
+     * @return titolo del topic
+     */
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
+    /**
+     * @return restituisce i messaggi pubblicati su quel topic
+     */
     public ArrayList<Message> getMessages() {
         return messages;
     }
 
+    /**
+     * @param message messaggio da aggiungere al topic
+     */
     public void addMessage(Message message) {
         messages.add(message);
     }
 
+    /**
+     * Controlla se due topic sono uguali (dato il titolo)
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Topic) {

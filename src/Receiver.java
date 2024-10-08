@@ -2,7 +2,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class Receiver extends Thread {
     Socket s;
@@ -13,6 +12,10 @@ public class Receiver extends Thread {
         this.sender = sender;
     }
 
+    /**
+     * Resta in ascolto di comandi inviati alla socket.
+     * Esce dal ciclo quando viene inviato il comando quit.
+     */
     @Override
     public void run() {
         try {

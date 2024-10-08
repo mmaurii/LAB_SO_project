@@ -9,7 +9,7 @@ public class ClientHandler implements Runnable {
     // false = publisher, true = subscriber
     private Boolean publishORSubscribe = null;
     private Topic topic = null;
-    private List<Message> messages;
+    private final List<Message> messages;
     private PrintWriter clientPW;
     private boolean running = true;
     private final Object sendLock = new Object(); // Oggetto di sincronizzazione
@@ -20,6 +20,9 @@ public class ClientHandler implements Runnable {
         this.messages = new ArrayList<>();
     }
 
+    /**
+     * Loop principale per la comunicazione tra client (tramite sender e receiver) e server
+     */
     @Override
     public void run() {
         try {
@@ -71,6 +74,10 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Registra il client come publisher
+     * @param parameter topic che si vuole pubblicare
+     */
     private void publish(String parameter) {
         if (publishORSubscribe != null) {
             clientPW.println("Non puoi più eseguire questo comando");
@@ -87,8 +94,12 @@ public class ClientHandler implements Runnable {
         this.topic = server.addTopic(new Topic(parameter));
     }
 
-    // false = publisher, true = subscriber
+    /**
+     * Registra il client come subscriber
+     * @param parameter topic a cui ci si vuole iscrivere
+     */
     private void subscribe(String parameter) {
+        // false = publisher, true = subscriber
         if (publishORSubscribe != null) {
             clientPW.println("Non puoi più eseguire questo comando");
             return;
@@ -109,6 +120,9 @@ public class ClientHandler implements Runnable {
         publishORSubscribe = true;
     }
 
+    /**
+     * elenca i topic presenti
+     */
     private void show() {
         HashSet<Topic> lTopic = server.getTopics();
         StringBuilder output;
@@ -125,8 +139,13 @@ public class ClientHandler implements Runnable {
         clientPW.println(output);
     }
 
-    // false = publisher, true = subscriber
+    /**
+     * Controlla se un comando è eseguibile solo dai publisher
+     * @param command comando sui fare il controllo
+     * @return true se il comando è eseguibile solo dal publisher
+     */
     private boolean isPublisherCommand(String command) {
+        // false = publisher, true = subscriber
         if (publishORSubscribe == null) {
             clientPW.println("Devi essere registrato come publisher o subscriber per inviare questo comando");
             return false;
@@ -144,6 +163,10 @@ public class ClientHandler implements Runnable {
         return false;
     }
 
+    /**
+     * Pubblica un messaggio sul topic del publisher
+     * @param text messaggio da inviare
+     */
     private void send(String text) {
         if (isPublisherCommand("send")) {
             if (text.isEmpty()) {
@@ -171,19 +194,30 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Invia un messaggio a tutti i publisher iscritti al topic
+     * @param message il messaggio che viene inviato
+     */
     public void sendExecute(Message message) {
         // Invia il messaggio a tutti i subscriber
         for (ClientHandler c : topic.getClients()) {
             c.forward(message.toString());
         }
-
         addMessage(message);
     }
 
+    /**
+     * Invia una stringa al PrintWriter del ClientHandler
+     * @param text testo da inviare al PrintWriter
+     */
     private void forward(String text) {
         clientPW.println(text);
     }
 
+    /**
+     * Prova a eseguire il comando list se il server non è
+     * in fase di ispezione
+     */
     private void list() {
         if (isPublisherCommand("list")) {
             //controllo se il server è in fase di ispezione
@@ -199,6 +233,10 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Elenca tutti i messaggi che questo publisher ha
+     * pubblicato sul topic
+     */
     public void listExecute() {
         if (messages.isEmpty()) {
             clientPW.println("Non ci sono messaggi");
@@ -211,6 +249,10 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Prova ad eseguire il comando listAll se il server non è in fase
+     * di ispezione
+     */
     private void listAll() {
         if (topic == null) {
             clientPW.println("Devi registrarti come publisher o subscriber " +
@@ -228,6 +270,9 @@ public class ClientHandler implements Runnable {
         listallExecute();
     }
 
+    /**
+     * Elenca tutti i messaggi inviati sul topic
+     */
     public void listallExecute() {
         if (topic.getMessages().isEmpty()) {
             clientPW.println("Non ci sono messaggi");
@@ -240,6 +285,9 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Interrompe la connessione al server per questo client.
+     */
     public synchronized void quit() {
         running = false;
 
@@ -247,12 +295,24 @@ public class ClientHandler implements Runnable {
         clientPW.close();
     }
 
+    /**
+     * Cancella un messaggio su un certo topic
+     * @param id id del messaggio da cancellare
+     * @param t topic dove si trova il messaggio da cancellare
+     */
     public synchronized void delMessage(Topic t, int id) {
+        // l'operazione non viene eseguita se il topic passato come parametro
+        // è diverso da quello del client
         if (topic == t) {
             messages.removeIf(m -> m.getID() == id);
         }
     }
 
+    /**
+     * Aggiunge un messaggio sia alla lista dei messaggi inviati
+     * dal client, che a quelli presenti sul topic del publisher
+     * @param mess messaggio inviato
+     */
     public synchronized void addMessage(Message mess) {
         //Salva il messaggio
         messages.add(mess);

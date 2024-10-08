@@ -1,6 +1,6 @@
 public class Command {
-    private String command;
-    private ClientHandler sender;
+    private final String command;
+    private final ClientHandler sender;
     private Message message;
 
     public Command(String command, Message message, ClientHandler sender) {
@@ -14,6 +14,9 @@ public class Command {
         this.sender = sender;
     }
 
+    /**
+     * Esegue il comando memorizzato
+     */
     public void execute() {
         switch (command) {
             case "list" -> sender.listExecute();

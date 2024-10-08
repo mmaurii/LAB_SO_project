@@ -3,7 +3,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class Sender extends Thread {
     Socket s;
@@ -12,6 +11,9 @@ public class Sender extends Thread {
         this.s = s;
     }
 
+    /**
+     * Invia al ClientHandler l'input da tastiera dell'utente
+     */
     @Override
     public void run() {
         BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
@@ -28,7 +30,7 @@ public class Sender extends Thread {
                         to.println("quit");
                         break;
                     }
-                    /* in caso contrario proseguiamo e analizziamo l'input inserito */
+                    // in caso contrario proseguiamo e analizziamo l'input inserito
                     to.println(request);
                     if (request.equals("quit")) {
                         break;
