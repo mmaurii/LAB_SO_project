@@ -1,67 +1,80 @@
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 public class TestConcurrency {
     public static void main(String[] Args) {
-        final int portNumber = 9000;
-        String localHost = "127.0.0.1";
-        Thread server = new Thread(new Server(portNumber));
-//        Client client = null;
-//        Client client1 = null;
-//        Client client2 = null;
-//        Client client3 = null;
-//        Client client4 = null;
-//        Client client5 = null;
-//        Client client6 = null;
-//        Client client7 = null;
-//        Client client8 = null;
-//        Client client9 = null;
+        class SynchronizedMethods extends Thread {
+            PrintWriter pw;
+            final int s;
+            boolean running = true;
+
+            public SynchronizedMethods(PrintWriter writer, int s) {
+                this.pw = writer;
+                this.s = s;
+            }
+
+            public PrintWriter getPW() {
+                return pw;
+            }
+
+            public void setPW(PrintWriter pw) {
+                this.pw = pw;
+            }
+
+            public void print() {
+                synchronized (pw) {
+                    pw.print(s);
+                    pw.println(s+1);
+                }
+            }
+
+            @Override
+            public void run() {
+                while (running) {
+                    print();
+                }
+            }
+
+            public void end(){
+                running = false;
+            }
+        }
+
+        ExecutorService service = Executors.newFixedThreadPool(3);
+        PrintWriter pw = new PrintWriter(System.out, true);
+        SynchronizedMethods t1 = new SynchronizedMethods(pw, 1);
+        SynchronizedMethods t2 = new SynchronizedMethods(pw, 3);
+        SynchronizedMethods t3 = new SynchronizedMethods(pw, 5);
+        Set<SynchronizedMethods> set = Set.of(t1, t2, t3);
+
+//            IntStream.range(0, 1000).forEach(count -> service.submit(t1::print));
+
+//        service.awaitTermination(2000, TimeUnit.MILLISECONDS);
 //        try {
-//            client = new Client();
-//            client1 = new Client();
-//            client2 = new Client();
-//            client3 = new Client();
-//            client4 = new Client();
-//            client5 = new Client();
-//            client6 = new Client();
-//            client7 = new Client();
-//            client8 = new Client();
-//            client9 = new Client();
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
+//            service.invokeAll(set);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
 //        }
-//
-//        server.start();
-//        client.startClient();
-//        client1.startClient();
-//        client2.startClient();
-//        client3.startClient();
-//        client4.startClient();
-//        client5.startClient();
-//        client6.startClient();
-//        client7.startClient();
-//        client8.startClient();
-//        client9.startClient();
-//
-//        client.send("publish calcio");
-//        client1.send("publish calcio");
-//        client2.send("publish calcio");
-//        client3.send("publish calcio");
-//        client4.send("publish calcio");
-//        client5.send("publish calcio");
-//        client6.send("publish calcio");
-//        client7.send("publish calcio");
-//        client8.send("publish calcio");
-//        client9.send("subscribe calcio");
-//        client1.send("1");
-//        client2.send("2");
-////        server.inspect("calcio");
-//        client3.send("3");
-//        client4.send("4");
-//        client5.send("5");
-//        client6.send("6");
-//        client7.send("7");
-//        client8.send("8");
-////        server.end();
-//
+        t1.start();
+        t2.start();
+        t3.start();
+
+        long start = System.currentTimeMillis();
+        while (start+5000>System.currentTimeMillis()) {
+
+        }
+
+        t1.end();
+        t2.end();
+        t3.end();
+
+        pw.close();
     }
+
 }

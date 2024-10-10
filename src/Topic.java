@@ -29,7 +29,7 @@ public class Topic {
     /**
      * @param message messaggio da aggiungere al topic
      */
-    public void addMessage(Message message) {
+    public synchronized void addMessage(Message message) {
         messages.add(message);
     }
 

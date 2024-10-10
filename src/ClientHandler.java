@@ -12,7 +12,6 @@ public class ClientHandler implements Runnable {
     private final List<Message> messages;
     private PrintWriter clientPW;
     private boolean running = true;
-    private final Object sendLock = new Object(); // Oggetto di sincronizzazione
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
@@ -172,7 +171,6 @@ public class ClientHandler implements Runnable {
             if (text.isEmpty()) {
                 clientPW.println("Non puoi inviare un messaggio vuoto");
             } else {
-//                synchronized (sendLock) {
                 //creo il messaggio
                 Message mess = new Message(text);
                 //controllo se il server è in fase di ispezione
@@ -189,7 +187,6 @@ public class ClientHandler implements Runnable {
                 // Invia il messaggio a tutti i subscriber
                 sendExecute(mess);
                 clientPW.printf("Inviato messaggio \"%s\"\n", text);
-//                }
             }
         }
     }
@@ -198,7 +195,7 @@ public class ClientHandler implements Runnable {
      * Invia un messaggio a tutti i publisher iscritti al topic
      * @param message il messaggio che viene inviato
      */
-    public void sendExecute(Message message) {
+    public synchronized void sendExecute(Message message) {
         // Invia il messaggio a tutti i subscriber
         for (ClientHandler c : topic.getClients()) {
             c.forward(message.toString());
@@ -237,15 +234,19 @@ public class ClientHandler implements Runnable {
      * Elenca tutti i messaggi che questo publisher ha
      * pubblicato sul topic
      */
-    public void listExecute() {
-        if (messages.isEmpty()) {
-            clientPW.println("Non ci sono messaggi");
-            return;
-        }
-        // funzionalità
-        clientPW.println("Messaggi:");
-        for (Message mess : messages) {
-            clientPW.println(mess.replyString());
+    public synchronized void listExecute() {
+        synchronized (messages){
+            if (messages.isEmpty()) {
+                clientPW.println("Non ci sono messaggi");
+                return;
+            }
+            // funzionalità
+            synchronized (clientPW){
+                clientPW.println("Messaggi:");
+                for (Message mess : messages) {
+                    clientPW.println(mess.replyString());
+                }
+            }
         }
     }
 
@@ -273,15 +274,17 @@ public class ClientHandler implements Runnable {
     /**
      * Elenca tutti i messaggi inviati sul topic
      */
-    public void listallExecute() {
+    public synchronized void listallExecute() {
         if (topic.getMessages().isEmpty()) {
             clientPW.println("Non ci sono messaggi");
             return;
         }
         // funzionalità
-        clientPW.println("Messaggi:");
-        for (Message mess : topic.getMessages()) {
-            clientPW.println(mess.replyString());
+        synchronized (clientPW) {
+            clientPW.println("Messaggi:");
+            for (Message mess : topic.getMessages()) {
+                clientPW.println(mess.replyString());
+            }
         }
     }
 
@@ -291,8 +294,10 @@ public class ClientHandler implements Runnable {
     public synchronized void quit() {
         running = false;
 
-        clientPW.println("quit");
-        clientPW.close();
+        synchronized (clientPW) {
+            clientPW.println("quit");
+            clientPW.close();
+        }
     }
 
     /**
@@ -301,10 +306,12 @@ public class ClientHandler implements Runnable {
      * @param t topic dove si trova il messaggio da cancellare
      */
     public synchronized void delMessage(Topic t, int id) {
-        // l'operazione non viene eseguita se il topic passato come parametro
-        // è diverso da quello del client
-        if (topic == t) {
-            messages.removeIf(m -> m.getID() == id);
+        synchronized (messages) {
+            // l'operazione non viene eseguita se il topic passato come parametro
+            // è diverso da quello del client
+            if (topic == t) {
+                messages.removeIf(m -> m.getID() == id);
+            }
         }
     }
 
@@ -313,9 +320,11 @@ public class ClientHandler implements Runnable {
      * dal client, che a quelli presenti sul topic del publisher
      * @param mess messaggio inviato
      */
-    public synchronized void addMessage(Message mess) {
+    private void addMessage(Message mess) {
         //Salva il messaggio
-        messages.add(mess);
-        topic.addMessage(mess);
+        synchronized (messages) {
+            messages.add(mess);
+            topic.addMessage(mess);
+        }
     }
 }

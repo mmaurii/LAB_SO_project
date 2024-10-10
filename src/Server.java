@@ -22,8 +22,8 @@ public class Server implements Runnable {
         Thread serverThread = new Thread(this);
         serverThread.start();
         this.commandLoop();
-
     }
+
     /**
      * @return restituisce true se il server è in fase di ispezione
      */
@@ -59,25 +59,12 @@ public class Server implements Runnable {
         }
     }
 
-    /**
-     * Funzione eseguita quando viene avviato il thread
-     */
-    @Override
-    public void run() {
-        create();
-    }
-
-    /**
-     * @return i topic presenti sul server
-     */
-    public HashSet<Topic> getTopics() {
-        return topics;
-    }
 
     /**
      * Avvio del server thread, in attesa di connessioni dai client
      */
-    private void create() {
+    @Override
+    public void run() {
         try {
             serverSocket = new ServerSocket(port);
             System.out.println("Server avviato");
@@ -107,6 +94,13 @@ public class Server implements Runnable {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    /**
+     * @return i topic presenti sul server
+     */
+    public HashSet<Topic> getTopics() {
+        return topics;
     }
 
     /**
@@ -176,7 +170,7 @@ public class Server implements Runnable {
      *
      * @param topicName topic che si vuole ispezionare
      */
-    public void inspect(String topicName) {
+    private void inspect(String topicName) {
         if (topicName == null) {
             System.out.println("Inserisci il nome del topic da ispezionare.");
         } else {
@@ -230,7 +224,7 @@ public class Server implements Runnable {
     /**
      * Termina la sessione interattiva
      */
-    public void end() {
+    private void end() {
         // Resetta il topic ispezionato
         inspectedTopic = null;
         //processo tutti i comandi ricevuti durante l'ispezione
@@ -242,7 +236,7 @@ public class Server implements Runnable {
     /**
      * Esegue i comandi presenti sul commandBuffer
      */
-    private synchronized void executeOperation() {
+    private void executeOperation() {
         for (Command command : commandsBuffer) {
             command.execute();
         }
@@ -310,7 +304,7 @@ public class Server implements Runnable {
      * Aggiunge un subscriber a un topic
      *
      * @param client subscriber da iscrivere
-     * @param topic topic a cui iscrivere il subscriber
+     * @param topic  topic a cui iscrivere il subscriber
      * @return il topic a cui si è iscritto il client, null se non è presente quel topic
      */
     public synchronized Topic addSubscriber(ClientHandler client, Topic topic) {
