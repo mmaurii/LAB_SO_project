@@ -1,13 +1,11 @@
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
 import java.util.*;
 
 /**
  * Classe server
  */
-public class Server implements Runnable {
+public class Server {
     private final HashSet<Topic> topics = new HashSet<>();
     private final List<ClientHandler> clients = new ArrayList<>();
     private Topic inspectedTopic = null;
@@ -19,8 +17,13 @@ public class Server implements Runnable {
 
     public Server(int port) {
         this.port = port;
-        Thread serverThread = new Thread(this);
-        serverThread.start();
+        System.out.println("probva");
+        try {
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        new SocketListener(this);
         this.commandLoop();
     }
 
@@ -56,43 +59,6 @@ public class Server implements Runnable {
                 if (parts.length == 1) inspecting(parts[0], null);
                 if (parts.length == 2) inspecting(parts[0], parts[1]);
             }
-        }
-    }
-
-
-    /**
-     * Avvio del server thread, in attesa di connessioni dai client
-     */
-    @Override
-    public void run() {
-        try {
-            serverSocket = new ServerSocket(port);
-            System.out.println("Server avviato");
-            while (!Thread.interrupted()) {
-                try {
-                    Socket clientSocket = serverSocket.accept();
-                    System.out.printf("Nuova connessione da %s\n", clientSocket.getInetAddress());
-                    if (!Thread.interrupted()) {
-                        // crea un nuovo thread per il nuovo socket
-                        ClientHandler ch = new ClientHandler(clientSocket, this);
-                        new Thread(ch).start();
-                        this.clients.add(ch);
-                    } else {
-                        serverSocket.close();
-                        break;
-                    }
-                } catch (SocketException e) {
-                    if (!running) {
-                        System.out.println("Server arrestato.");
-                        break;
-                    } else {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            this.serverSocket.close();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
         }
     }
 
@@ -324,5 +290,15 @@ public class Server implements Runnable {
      */
     public synchronized void addCommand(Command command) {
         this.commandsBuffer.addLast(command);
+    }
+
+    public ServerSocket getSocket(){
+        return serverSocket;
+    }
+    public void addClient(ClientHandler ch){
+        this.clients.add(ch);
+    }
+    public boolean isRunning(){
+        return running;
     }
 }

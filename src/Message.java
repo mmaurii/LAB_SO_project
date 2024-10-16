@@ -3,7 +3,6 @@ import java.time.format.DateTimeFormatter;
 
 public class Message {
     private static int idCounter = 0;
-    // private ClientHandler sender;
     private final int id;
     private final String text;
     private final LocalDateTime sendDate;
@@ -13,7 +12,6 @@ public class Message {
         this.id = ++idCounter;
         this.text = text;
         this.sendDate = LocalDateTime.now();
-//        this.sender = sender;
     }
 
     /**
