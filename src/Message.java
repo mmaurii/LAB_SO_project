@@ -1,6 +1,9 @@
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * La classe definisce un messaggio di testo all'interno della comunicazione tra publisher e subscriber
+ */
 public class Message {
     private static int idCounter = 0;
     private final int id;
@@ -9,7 +12,9 @@ public class Message {
     final String DATE_TIME_FORMAT = "dd/MM/yyyy - kk:mm:ss";
 
     public Message(String text) {
-        this.id = ++idCounter;
+        synchronized (Message.class) {
+            this.id = ++idCounter;
+        }
         this.text = text;
         this.sendDate = LocalDateTime.now();
     }

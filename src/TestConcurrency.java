@@ -9,12 +9,12 @@ import java.util.stream.IntStream;
 
 public class TestConcurrency {
     public static void main(String[] Args) {
-        class SynchronizedMethods extends Thread {
+        class TestPW extends Thread {
             PrintWriter pw;
             final int s;
             boolean running = true;
 
-            public SynchronizedMethods(PrintWriter writer, int s) {
+            public TestPW(PrintWriter writer, int s) {
                 this.pw = writer;
                 this.s = s;
             }
@@ -30,7 +30,7 @@ public class TestConcurrency {
             public void print() {
                 synchronized (pw) {
                     pw.print(s);
-                    pw.println(s+1);
+                    pw.println(s + 1);
                 }
             }
 
@@ -41,16 +41,66 @@ public class TestConcurrency {
                 }
             }
 
-            public void end(){
+            public void end() {
+                running = false;
+            }
+        }
+
+        class Person {
+            private String name;
+
+            public Person(String name) {
+                this.name = name;
+            }
+
+            public synchronized String GetName() {
+                return name;
+            }
+        }
+
+        class SynchronizedMethods extends Thread {
+            LinkedList<Person> ps;
+            int n;
+            boolean running = true;
+
+            public SynchronizedMethods(LinkedList<Person> ps, int n) {
+                this.ps = ps;
+                this.n = n;
+            }
+
+            public void print() {
+                for(Person p : ps) {
+                    String name = p.GetName();
+                    System.out.println(n + " " + name + " " + n);
+                }
+            }
+
+            @Override
+            public void run() {
+                while (running) {
+                    Person p =
+                            new Person("gianni");
+//                            ps.removeFirst();
+                    print();
+                    ps.add(p);
+                }
+            }
+
+            public void end() {
                 running = false;
             }
         }
 
         ExecutorService service = Executors.newFixedThreadPool(3);
         PrintWriter pw = new PrintWriter(System.out, true);
-        SynchronizedMethods t1 = new SynchronizedMethods(pw, 1);
-        SynchronizedMethods t2 = new SynchronizedMethods(pw, 3);
-        SynchronizedMethods t3 = new SynchronizedMethods(pw, 5);
+        Person p = new Person("pippo");
+        Person p1 = new Person("pluto");
+        Person p2 = new Person("paperino");
+        LinkedList<Person> ps = new LinkedList<>(Arrays.asList(p, p1, p2));
+
+        SynchronizedMethods t1 = new SynchronizedMethods(ps, 1);
+        SynchronizedMethods t2 = new SynchronizedMethods(ps, 2);
+        SynchronizedMethods t3 = new SynchronizedMethods(ps, 3);
         Set<SynchronizedMethods> set = Set.of(t1, t2, t3);
 
 //            IntStream.range(0, 1000).forEach(count -> service.submit(t1::print));
@@ -66,7 +116,7 @@ public class TestConcurrency {
         t3.start();
 
         long start = System.currentTimeMillis();
-        while (start+5000>System.currentTimeMillis()) {
+        while (start + 5000 > System.currentTimeMillis()) {
 
         }
 

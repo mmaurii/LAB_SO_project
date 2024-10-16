@@ -1,3 +1,7 @@
+/**
+ * La classe definisce un pattern per memorizzare i possibili
+ * comandi che il server può ricevere da un client
+ */
 public class Command {
     private final String command;
     private final ClientHandler sender;

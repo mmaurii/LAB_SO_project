@@ -7,7 +7,7 @@ import java.util.*;
  */
 public class Server {
     private final HashSet<Topic> topics = new HashSet<>();
-    private final List<ClientHandler> clients = new ArrayList<>();
+    private final HashSet<ClientHandler> clients = new HashSet<>();
     private Topic inspectedTopic = null;
     private boolean running = true;
     final int port;
@@ -28,21 +28,23 @@ public class Server {
     }
 
     /**
-     * @return restituisce true se il server è in fase di ispezione
+     * @return restituisce true se il server è in fase di ispezione, false altrimenti
      */
     public synchronized Boolean isInspectedLock() {
         return inspectedLock;
     }
 
     /**
-     * Cambia lo stato di ispezione del server
+     * Cambia lo stato corrente di ispezione del server
      */
     private synchronized void changeStatusInspectedLock() {
         this.inspectedLock = !inspectedLock;
     }
 
     /**
-     * Loop principale per il thread in ascolto dei comandi (main thread)
+     * mette il thread in ascolto per eventuali comandi del server
+     * <p>
+     * SPOSTARE IN MAINSERVER CLASS e correggere l'if e i metodi!!!!!
      */
     private void commandLoop() {
         Scanner input = new Scanner(System.in);
@@ -52,10 +54,10 @@ public class Server {
                     inspectedTopic.getTitle());
             String command = input.nextLine();
             String[] parts = command.split(" ");
-            if (inspectedTopic == null) {
+            if (inspectedTopic == null) {//normal work flow
                 if (parts.length == 1) notInspecting(parts[0], null);
                 if (parts.length == 2) notInspecting(parts[0], parts[1]);
-            } else {
+            } else {//inspection phase
                 if (parts.length == 1) inspecting(parts[0], null);
                 if (parts.length == 2) inspecting(parts[0], parts[1]);
             }
@@ -65,7 +67,7 @@ public class Server {
     /**
      * @return i topic presenti sul server
      */
-    public HashSet<Topic> getTopics() {
+    public synchronized HashSet<Topic> getTopics() {
         return topics;
     }
 
@@ -100,7 +102,7 @@ public class Server {
     }
 
     /**
-     * Rimuove tutti i client connessi e arresta il server
+     * chiude tutte le connessioni coi client e arresta il server
      */
     private void quit() {
         running = false;
@@ -119,20 +121,24 @@ public class Server {
     }
 
     /**
-     * Mostra i topic, se ce ne sono
+     * Mostra i topic al server, se ce ne sono
      */
     private void show() {
-        if (topics.isEmpty()) System.out.println("Non sono presenti topic");
-        else {
-            System.out.println("Topic presenti:");
-            for (Topic t : topics) {
-                System.out.printf("\t- %s\n", t.getTitle());
+        synchronized (topics) {
+            if (topics.isEmpty()) {
+                System.out.println("Non sono presenti topic");
+            } else {
+                System.out.println("Topic presenti:");
+                for (Topic t : topics) {
+                    System.out.printf("\t- %s\n", t.getTitle());
+                }
             }
         }
     }
 
     /**
-     * Imposta il topic ispezionato se è presente
+     * Imposta il topic ispezionato se è presente, altrimenti
+     * segnala al server che non esiste il topic inserito
      *
      * @param topicName topic che si vuole ispezionare
      */
@@ -159,16 +165,19 @@ public class Server {
      * @return il topic richiesto, null se non è stato trovato
      */
     private Topic getTopicFromTitle(String title) {
-        for (Topic t : topics) {
-            if (Objects.equals(t.getTitle(), title)) {
-                return t;
+        synchronized (topics) {
+            for (Topic t : topics) {
+                if (Objects.equals(t.getTitle(), title)) {
+                    return t;
+                }
             }
         }
         return null;
     }
 
     /**
-     * Elenca tutti i messaggi nel topic della sezione interattiva
+     * Elenca tutti i messaggi nel topic selezionato col comando
+     * inspect durante la fase di ispezione
      */
     private void listAll() {
         if (inspectedTopic == null) {
@@ -188,7 +197,7 @@ public class Server {
     }
 
     /**
-     * Termina la sessione interattiva
+     * Termina la fase di ispezione
      */
     private void end() {
         // Resetta il topic ispezionato
@@ -196,28 +205,31 @@ public class Server {
         //processo tutti i comandi ricevuti durante l'ispezione
         executeOperation();
         // esco dalla fase di ispezione
-        changeStatusInspectedLock();
+        changeStatusInspectedLock();                        //RIVEDIIIIIIII
     }
 
     /**
      * Esegue i comandi presenti sul commandBuffer
+     * che sono stati ricevuti durante la fase di ispezione
      */
     private void executeOperation() {
-        for (Command command : commandsBuffer) {
-            command.execute();
+        synchronized (commandsBuffer) {
+            for (Command command : commandsBuffer) {
+                command.execute();
+            }
+            commandsBuffer.clear();
         }
-        commandsBuffer.clear();
     }
 
     /**
-     * @return restituisce il topic della sessione interattiva/ispezionato
+     * @return restituisce il topic che sta venendo ispezionato
      */
     public synchronized Topic getInspectedTopic() {
         return inspectedTopic;
     }
 
     /**
-     * Cancella messaggi dal topic ispezionato
+     * Cancella il messaggio con l'id specificato dal topic ispezionato
      *
      * @param parameter ID del messaggio che si vuole cancellare
      */
@@ -289,7 +301,9 @@ public class Server {
      * @param command comando da aggiungere
      */
     public synchronized void addCommand(Command command) {
-        this.commandsBuffer.addLast(command);
+        synchronized (commandsBuffer) {
+            this.commandsBuffer.addLast(command);
+        }
     }
 
     public ServerSocket getSocket(){

@@ -1,15 +1,20 @@
 import java.util.ArrayList;
+import java.util.HashSet;
 
+/**
+ * La classe definisce un argomento di discussione su cui
+ * possonono esssere scambiati messaggi
+ */
 public class Topic {
     private final String title;
     private final ArrayList<Message> messages = new ArrayList<>();
-    private final ArrayList<ClientHandler> clients = new ArrayList<>();
+    private final HashSet<ClientHandler> clients = new HashSet<>();
 
     public Topic(String title) {
         this.title = title;
     }
 
-    public ArrayList<ClientHandler> getClients() {
+    public HashSet<ClientHandler> getClients() {
         return clients;
     }
     /**
@@ -34,7 +39,7 @@ public class Topic {
     }
 
     /**
-     * Controlla se due topic sono uguali (dato il titolo)
+     * Controlla se due topic sono uguali in base al titolo
      */
     @Override
     public boolean equals(Object obj) {
