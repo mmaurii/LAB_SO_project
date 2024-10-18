@@ -30,8 +30,10 @@ public class Receiver extends Thread {
             }
 
         } catch (IOException e) {
-            System.err.println("IOException caught: " + e);
-            e.printStackTrace();
+            System.out.println("Il server si è disconnesso");
+
+//            System.err.println("IOException caught: " + e);
+//            e.printStackTrace();
         } finally {
             sender.interrupt();
             System.out.println("Receiver closed.");

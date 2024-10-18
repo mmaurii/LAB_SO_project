@@ -60,16 +60,16 @@ public class TestConcurrency {
 
         class SynchronizedMethods extends Thread {
             LinkedList<Person> ps;
-            int n;
+            Integer n;
             boolean running = true;
 
-            public SynchronizedMethods(LinkedList<Person> ps, int n) {
+            public SynchronizedMethods(LinkedList<Person> ps, Integer n) {
                 this.ps = ps;
                 this.n = n;
             }
 
             public void print() {
-                for(Person p : ps) {
+                for (Person p : ps) {
                     String name = p.GetName();
                     System.out.println(n + " " + name + " " + n);
                 }
@@ -78,12 +78,26 @@ public class TestConcurrency {
             @Override
             public void run() {
                 while (running) {
-                    Person p =
-                            new Person("gianni");
-//                            ps.removeFirst();
-                    print();
-                    ps.add(p);
+//                    Person p =
+//                            new Person("gianni");
+////                            ps.removeFirst();
+//                    print();
+//                    ps.add(p);
+
+//                    synchronized (n) {
+                    aumenta();
+                    decresci();
+                    System.out.println(n);
+//                    }
                 }
+            }
+
+            private void decresci() {
+                n--;
+            }
+
+            private void aumenta() {
+                n++;
             }
 
             public void end() {
@@ -97,10 +111,10 @@ public class TestConcurrency {
         Person p1 = new Person("pluto");
         Person p2 = new Person("paperino");
         LinkedList<Person> ps = new LinkedList<>(Arrays.asList(p, p1, p2));
-
-        SynchronizedMethods t1 = new SynchronizedMethods(ps, 1);
-        SynchronizedMethods t2 = new SynchronizedMethods(ps, 2);
-        SynchronizedMethods t3 = new SynchronizedMethods(ps, 3);
+        Integer i = 1;
+        SynchronizedMethods t1 = new SynchronizedMethods(ps, i);
+        SynchronizedMethods t2 = new SynchronizedMethods(ps, i);
+        SynchronizedMethods t3 = new SynchronizedMethods(ps, i);
         Set<SynchronizedMethods> set = Set.of(t1, t2, t3);
 
 //            IntStream.range(0, 1000).forEach(count -> service.submit(t1::print));
@@ -116,7 +130,7 @@ public class TestConcurrency {
         t3.start();
 
         long start = System.currentTimeMillis();
-        while (start + 5000 > System.currentTimeMillis()) {
+        while (start + 20000 > System.currentTimeMillis()) {
 
         }
 

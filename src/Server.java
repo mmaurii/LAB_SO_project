@@ -5,26 +5,27 @@ import java.util.*;
 /**
  * Classe server
  */
-public class Server {
+public class Server implements Runnable {
     private final HashSet<Topic> topics = new HashSet<>();
     private final HashSet<ClientHandler> clients = new HashSet<>();
     private Topic inspectedTopic = null;
     private boolean running = true;
-    final int port;
-    private ServerSocket serverSocket = null;
     LinkedList<Command> commandsBuffer = new LinkedList<>();
     private Boolean inspectedLock = false; // Oggetto di sincronizzazione
+    private SocketListener socketListener;
 
-    public Server(int port) {
-        this.port = port;
-        System.out.println("probva");
-        try {
-            serverSocket = new ServerSocket(port);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        new SocketListener(this);
-        this.commandLoop();
+    //definizione nomi comandi
+    private final String deleteCommand = "delete";
+    private final String quitCommand = "quit";
+    private final String listAllCommand = "listall";
+    private final String endCommand = "end";
+    private final String inspectCommand = "inspect";
+    private final String showCommand = "show";
+
+    public Server(int portNumber) {
+        this.socketListener = new SocketListener(this, portNumber);
+        Thread socketListenerThread = new Thread(socketListener);
+        socketListenerThread.start();
     }
 
     /**
@@ -43,10 +44,9 @@ public class Server {
 
     /**
      * mette il thread in ascolto per eventuali comandi del server
-     * <p>
-     * SPOSTARE IN MAINSERVER CLASS e correggere l'if e i metodi!!!!!
      */
-    private void commandLoop() {
+    @Override
+    public void run() {
         Scanner input = new Scanner(System.in);
         while (running) {
             if (inspectedTopic == null) System.out.println("\n> Inserisci comando");
@@ -79,9 +79,9 @@ public class Server {
      */
     private void notInspecting(String command, String parameter) {
         switch (command) {
-            case "quit" -> quit();
-            case "show" -> show();
-            case "inspect" -> inspect(parameter);
+            case quitCommand -> quit();
+            case showCommand -> show();
+            case inspectCommand -> inspect(parameter);
             default -> System.out.printf("Comando non riconosciuto: %s\n", command);
         }
     }
@@ -94,9 +94,9 @@ public class Server {
      */
     private void inspecting(String command, String parameter) {
         switch (command) {
-            case "listall" -> listAll();
-            case "end" -> end();
-            case "delete" -> delete(parameter);
+            case listAllCommand -> listAll();
+            case endCommand -> end();
+            case deleteCommand -> delete(parameter);
             default -> System.out.printf("Comando non riconosciuto: %s\n", command);
         }
     }
@@ -107,17 +107,14 @@ public class Server {
     private void quit() {
         running = false;
         System.out.println("Interruzione dei client connessi");
-        for (ClientHandler client : this.clients) {
-            System.out.printf("Interruzione client %s\n", client);
-            client.quit();
-        }
-        try {
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();
+        synchronized (clients) {
+            for (ClientHandler client : this.clients) {
+                System.out.printf("Interruzione client %s\n", client);
+                client.quit();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+
+        socketListener.close();
     }
 
     /**
@@ -151,8 +148,10 @@ public class Server {
                 System.out.printf("Il topic %s non esiste.\n", topicName);
             } else {
                 // entro in fase di ispezione
-                changeStatusInspectedLock();
-                inspectedTopic = topicToInspect;
+                synchronized (this) {
+                    changeStatusInspectedLock();
+                    inspectedTopic = topicToInspect;
+                }
                 System.out.printf("Ispezionando il topic: %s\n", inspectedTopic.getTitle());
             }
         }
@@ -199,13 +198,13 @@ public class Server {
     /**
      * Termina la fase di ispezione
      */
-    private void end() {
+    private synchronized void end() {
         // Resetta il topic ispezionato
         inspectedTopic = null;
         //processo tutti i comandi ricevuti durante l'ispezione
         executeOperation();
         // esco dalla fase di ispezione
-        changeStatusInspectedLock();                        //RIVEDIIIIIIII
+        changeStatusInspectedLock();
     }
 
     /**
@@ -242,12 +241,14 @@ public class Server {
             int initialSize = messages.size();
             // Costrutto simile all'Iterator per rimuovere con
             // sicurezza un elemento da una lista se soddisfa una condizione
-            synchronized (messages) {
+            synchronized (messages) {//inutile
                 messages.removeIf(m -> m.getID() == id);
             }
 
-            for (ClientHandler ch : clients) {
-                ch.delMessage(inspectedTopic, id);
+            synchronized (clients) {
+                for (ClientHandler ch : clients) {
+                    ch.delMessage(inspectedTopic, id);
+                }
             }
             // confronto le dimensioni della lista per capire se è stato cancellato un elemento
             if (initialSize == messages.size()) {
@@ -267,14 +268,16 @@ public class Server {
      * @param topic topic che si vuole aggiungere
      */
     public synchronized Topic addTopic(Topic topic) {
-        for (Topic t : topics) {
-            if (topic.equals(t)) {
-                return t;
+        synchronized (topics) {
+            for (Topic t : topics) {
+                if (topic.equals(t)) {
+                    return t;
+                }
             }
-        }
 
-        topics.add(topic);
-        return topic;
+            topics.add(topic);
+            return topic;
+        }
     }
 
 
@@ -286,10 +289,14 @@ public class Server {
      * @return il topic a cui si è iscritto il client, null se non è presente quel topic
      */
     public synchronized Topic addSubscriber(ClientHandler client, Topic topic) {
-        for (Topic t : topics) {
-            if (topic.equals(t)) {
-                t.getClients().add(client);
-                return t;
+        synchronized (topics) {
+            for (Topic t : topics) {
+                if (topic.equals(t)) {
+                    synchronized (t.getClients()) {
+                        t.getClients().add(client);
+                    }
+                    return t;
+                }
             }
         }
         return null;
@@ -306,13 +313,13 @@ public class Server {
         }
     }
 
-    public ServerSocket getSocket(){
-        return serverSocket;
+    public void addClient(ClientHandler ch) {
+        synchronized (clients) {
+            this.clients.add(ch);
+        }
     }
-    public void addClient(ClientHandler ch){
-        this.clients.add(ch);
-    }
-    public boolean isRunning(){
+
+    public synchronized boolean isRunning() {
         return running;
     }
 }

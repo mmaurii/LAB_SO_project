@@ -37,7 +37,7 @@ public class Message {
      * nelle risposte ai comandi inviati
      */
     public String replyString() {
-        return String.format("\t- ID: %s\n\t  Testo: %s\n\t  Data: %s",
+        return String.format("\n\t- ID: %s\n\t  Testo: %s\n\t  Data: %s",
                 id, text, sendDate.format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)));
     }
 }
