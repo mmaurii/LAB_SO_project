@@ -3,42 +3,45 @@ import java.net.Socket;
 
 public class Client {
     public static void main(String[] args) {
-//        if (args.length < 2) {
-//            System.err.println("Usage: java Client <host> <port>");
-//            return;
-//        }
-
-//        String host = args[0];
+        // Impostazioni di default per host e porta
         String host = "127.0.0.1";
-//        int port = Integer.parseInt(args[1]);
         int port = 9000;
+        /*
+        // Verifica se host e porta sono passati come argomenti (opzionale)
+        if (args.length >= 2) {
+            host = args[0];
+            try {
+                port = Integer.parseInt(args[1]);
+            } catch (NumberFormatException e) {
+                System.err.println("Errore: inserisci un numero di porta valido.");
+                return;
+            }
+        }
+         */
 
-        try {
-            Socket s = new Socket(host, port);
+        // Gestione connessione
+        try (Socket socket = new Socket(host, port)) {
             System.out.println("Connesso al server");
 
-            /*
-             * Delega la gestione di input/output a due thread separati, uno per inviare
-             * messaggi e uno per leggerli
-             */
-            Sender sender = new Sender(s);
-            Receiver receiver = new Receiver(s, sender);
+            // Creazione e avvio dei thread per invio e ricezione messaggi
+            Sender sender = new Sender(socket);
+            Receiver receiver = new Receiver(socket, sender);
+
             sender.start();
             receiver.start();
 
-            try {
-                /* rimane in attesa che sender e receiver terminino la loro esecuzione */
-                sender.join();
-                receiver.join();
-                s.close();
-                System.out.println("Socket closed.");
-            } catch (InterruptedException e) {
-                System.err.println("Thread Interrotto");
-            }
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: inserisci un numero di porta valido");
+            // Attesa della fine dei thread
+            sender.join();
+            receiver.join();
+
+            socket.close();
+            System.out.println("Socket chiusa.");
+
         } catch (IOException e) {
-            System.out.println("Error: Il server è irraggiungibile provare cambiando host e port number");
+            System.err.println("Errore: Il server è irraggiungibile, " +
+                    "riprovare cambiando host e numero di porta.");
+        } catch (InterruptedException e) {
+            System.err.println("Errore: Thread interrotto.");
         }
     }
 }

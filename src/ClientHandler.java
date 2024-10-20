@@ -39,48 +39,65 @@ public class ClientHandler implements Runnable {
 
             //controllo che ci sia un comando del client da leggere
             while (running && clientMessage.hasNextLine()) {
-                if (Thread.currentThread().isInterrupted()) {
-                    // Gestione interruzione
-                    System.out.println("Thread interrotto.");
-                    clientPW.println("Chiusura server, sconnessione in corso");
-                    break;
-                }
-                // gestione comandi
-                String request = clientMessage.nextLine();
-                System.out.printf("<Ricevuto comando \"%s\">\n", request);
-                String command;
-                String parameter = "";
-                if (request.indexOf(' ') == -1) {
-                    command = request;
-                } else {
-                    command = request.substring(0, request.indexOf(' '));
-                    parameter = request.substring(request.indexOf(' ') + 1).toLowerCase().trim();
-                }
-                switch (command) {
-                    case publishCommand -> publish(parameter);
-                    case subscribeCommand -> subscribe(parameter);
-                    case showCommand -> show();
-                    case quitCommand -> quit();
-                    case sendCommand -> send(parameter);
-                    case listCommand -> list();
-                    case listAllCommand -> listAll();
-                    default -> clientPW.printf("Comando non riconosciuto: %s\n", command);
-                }
+                mainLoop(clientMessage);
             }
 
         } catch (IOException e) {
             System.err.println("ClientHandler IOException: " + e);
         } finally {
+            closeSocket();
+        }
+    }
+
+    /**
+     * Ciclo principale per gestire la ricezione di comandi del client.
+     *
+     * @param clientMessage comando inviato dal client
+     */
+    private synchronized void mainLoop(Scanner clientMessage) {
+        if (Thread.currentThread().isInterrupted()) {
+            // Gestione interruzione
+            System.out.println("Thread interrotto.");
+            clientPW.println("Chiusura server, sconnessione in corso");
+            return;
+        }
+        // gestione comandi
+        String request = clientMessage.nextLine();
+        System.out.printf("<Ricevuto comando \"%s\">\n", request);
+        String command;
+        String parameter = "";
+        if (request.indexOf(' ') == -1) {
+            command = request;
+        } else {
+            command = request.substring(0, request.indexOf(' '));
+            parameter = request.substring(request.indexOf(' ') + 1).toLowerCase().trim();
+        }
+        switch (command) {
+            case publishCommand -> publish(parameter);
+            case subscribeCommand -> subscribe(parameter);
+            case showCommand -> show();
+            case quitCommand -> quit();
+            case sendCommand -> send(parameter);
+            case listCommand -> list();
+            case listAllCommand -> listAll();
+            default -> clientPW.printf("Comando non riconosciuto: %s\n", command);
+        }
+    }
+
+    /**
+     * Chiude la socket e gestisce eventuali errori di chiusura.
+     */
+    private synchronized void closeSocket() {
+        if (socket != null && !socket.isClosed()) {
             try {
-                if (socket != null && !socket.isClosed()) {
-                    socket.close();
-                }
+                socket.close();
                 System.out.println("Connessione terminata per il thread " + Thread.currentThread());
             } catch (IOException e) {
                 System.err.println("Errore di chiusura socket: " + e.getMessage());
             }
         }
     }
+
 
     /**
      * Registra il client come publisher
@@ -295,6 +312,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Data una lista di messaggi provvede a inviarla al client
+     *
      * @param messageList lista di messaggi
      */
     private void messagePrinter(ArrayList<Message> messageList) {

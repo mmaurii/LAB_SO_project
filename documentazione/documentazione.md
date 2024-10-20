@@ -13,21 +13,29 @@ Il server stesso offre un'interfaccia a linea di comando che permette a un utent
 ![classi.svg](classi.svg)
 
 ## Meccanismi Applicazione
+
 ### Server
 #### Overview
 La classe server ha una ServerSocket che permette ai client di connettersi a esso. Nel suo main thread resta in ascolto per i comandi da console. Dispone di un thread separato in cui accetta i client in arrivo. Ogni volta che un client si connette viene creato un ClientHandler associato a esso, il quale viene aggiunto alla lista dei client. Uno Scanner viene usato per inviare comandi da tastiera, che vengono poi differenziati tra comandi in modalità ispezione e non.
 #### Invio comandi
 Il main thread della classe server usa uno Scanner per ricevere comandi da tastiera. Dopo aver fatto il parsing del comando viene controllato l'`inspectedTopic` del server. Se è `null`, il server accetta solo i comandi quit, show e inspect. Se invece sta ispezionando un topic potranno essere eseguiti solo i comandi listall, end e delete. 
 #### Connessione client
-Dato che il server implementa la classe `Runnable`, può esegiure un altro thread al suo interno, che usa la `serverSocket` per connettere i client a esso. I client connessi sono memorizzati nel server in una lista di ClientHandler. Quando viene inviato il comando quit, oltre che chiudere la socket del server, si "forzano" tutti i ClientHander a inviare il comando quit per scollegarli dal server prima che questo venga chiuso.
+Dato che il server implementa la classe `Runnable`, può eseguire un altro thread al suo interno, che usa la `serverSocket` per connettere i client a esso. I client connessi sono memorizzati nel server in una lista di ClientHandler. Quando viene inviato il comando quit, oltre che chiudere la socket del server, si "forzano" tutti i ClientHander a inviare il comando quit per scollegarli dal server prima che questo venga chiuso.
 #### Gestione concorrenza
+
+### SocketListener
+#### Overview
+La classe SocketListener gestisce le connessioni in entrata da parte dei client verso un server, utilizzando un thread dedicato che ascolta continuamente su una porta specifica per nuove connessioni.
+#### Main Loop
+Il server rimane in ascolto di nuove connessioni client utilizzando `serverSocket.accept()`. Ogni volta che un client si connette, il server crea un oggetto ClientHandler per gestire la comunicazione con quel client in un nuovo thread.
+Ogni client viene aggiunto alla lista di client gestita dal server tramite il metodo `addClient()` del server.
 
 ### ClientHandler
 #### Overview
-Il ClientHandler gestisce la comunicazione tra il sever e i client connessi. Ogni ClientHandler dispone di un proprio thread che permette di gestire più richieste dei client contemporaneamente.   
-La classe ClientHandler ha un riferimento alla classe server a cui è connesso il client, che usa per ricevere informazioni da esso e modificarne i suoi contenuti (Topic, Messaggi).
+La classe ClientHandler gestisce la comunicazione tra il sever e i client connessi. Ogni ClientHandler dispone di un proprio thread che permette di gestire più richieste dei client contemporaneamente.   
+Ogni ClientHandler ha un riferimento alla classe server a cui è connesso il client, che usa per ricevere informazioni da esso e modificarne i suoi contenuti (Topic, Messaggi).
 #### Main Loop
-Un ClientHandler avvia un thread per ogni client connesso al server, permettendo l'esecuzione in parellelo di più client. Uno Scanner riceve i messaggi inviati dal Sender tramite l'InputSteam della socket, che vengono processati.  
+Un ClientHandler avvia un thread per ogni client connesso al server, permettendo l'esecuzione in parallelo di più client. Uno Scanner riceve i messaggi inviati dal Sender tramite l'InputSteam della socket, che vengono processati.  
 Vengono fatti dei controlli per assicurarsi che i comandi esclusivi ai Publisher non vengano eseguiti se il Client è sender o ancora deve inviare i comandi di `publish` o `subscribe`.
 #### Gestione concorrenza 
 

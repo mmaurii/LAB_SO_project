@@ -1,5 +1,3 @@
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.*;
 
 /**
@@ -43,7 +41,7 @@ public class Server implements Runnable {
     }
 
     /**
-     * mette il thread in ascolto per eventuali comandi del server
+     * Mette il thread in ascolto per eventuali comandi del server
      */
     @Override
     public void run() {
@@ -54,10 +52,11 @@ public class Server implements Runnable {
                     inspectedTopic.getTitle());
             String command = input.nextLine();
             String[] parts = command.split(" ");
-            if (inspectedTopic == null) {//normal work flow
+            if (inspectedTopic == null) {
                 if (parts.length == 1) notInspecting(parts[0], null);
                 if (parts.length == 2) notInspecting(parts[0], parts[1]);
-            } else {//inspection phase
+            } else {
+                // fase di ispezione
                 if (parts.length == 1) inspecting(parts[0], null);
                 if (parts.length == 2) inspecting(parts[0], parts[1]);
             }
@@ -102,7 +101,7 @@ public class Server implements Runnable {
     }
 
     /**
-     * chiude tutte le connessioni coi client e arresta il server
+     * Chiude tutte le connessioni coi client e arresta il server
      */
     private void quit() {
         running = false;
@@ -199,6 +198,7 @@ public class Server implements Runnable {
      * Termina la fase di ispezione
      */
     private synchronized void end() {
+        System.out.printf("Fine ispezione del topic %s.",inspectedTopic.getTitle());
         // Resetta il topic ispezionato
         inspectedTopic = null;
         //processo tutti i comandi ricevuti durante l'ispezione
@@ -313,12 +313,20 @@ public class Server implements Runnable {
         }
     }
 
+    /**
+     * Aggiunge un ClientHandler alla lista dei client connessi
+     *
+     * @param ch ClientHandler da aggiungere
+     */
     public void addClient(ClientHandler ch) {
         synchronized (clients) {
             this.clients.add(ch);
         }
     }
 
+    /**
+     * @return true se il server è in esecuzione, false altrimenti
+     */
     public synchronized boolean isRunning() {
         return running;
     }
