@@ -53,7 +53,16 @@ public class TestConcurrency {
                 this.name = name;
             }
 
-            public synchronized String GetName() {
+            public String GetName() {
+                String temp = name;
+                name = "ciao";
+                name=temp;
+                return name;
+            }
+            public String op() {
+                String temp = name;
+                name = "null";
+                name=temp;
                 return name;
             }
         }
@@ -105,17 +114,71 @@ public class TestConcurrency {
             }
         }
 
+        class Sync extends Thread {
+            Person p;
+            String n;
+            boolean running = true;
+
+            public Sync(Person p, String n) {
+                this.p = p;
+                this.n = n;
+            }
+
+            private void aumenta() {
+                n = "";
+            }
+
+            private void decresci() {
+                n += "ciao";
+            }
+
+            @Override
+            public void run() {
+                while (running) {
+//                    aumenta();
+//                    decresci();
+                    synchronized (p) {
+                        String name = p.GetName()+n;
+                        p.op();
+                        System.out.println(name);
+                    }
+                }
+            }
+
+            public void end() {
+                running = false;
+            }
+        }
+
         ExecutorService service = Executors.newFixedThreadPool(3);
-        PrintWriter pw = new PrintWriter(System.out, true);
+//        PrintWriter pw = new PrintWriter(System.out, true);
         Person p = new Person("pippo");
         Person p1 = new Person("pluto");
         Person p2 = new Person("paperino");
-        LinkedList<Person> ps = new LinkedList<>(Arrays.asList(p, p1, p2));
+        Person p3 = new Person("titti");
+        Person p4 = new Person("minni");
+        Person p5 = new Person("pluto");
+        Person p6 = new Person("paperino");
+        Person p7 = new Person("pluto");
+        Person p8 = new Person("paperino");
+
+//        LinkedList<Person> ps = new LinkedList<>(Arrays.asList(p, p1, p2));
         Integer i = 1;
-        SynchronizedMethods t1 = new SynchronizedMethods(ps, i);
-        SynchronizedMethods t2 = new SynchronizedMethods(ps, i);
-        SynchronizedMethods t3 = new SynchronizedMethods(ps, i);
-        Set<SynchronizedMethods> set = Set.of(t1, t2, t3);
+        String ciao = "ciao";
+//        SynchronizedMethods t1 = new SynchronizedMethods(ps, i);
+//        SynchronizedMethods t2 = new SynchronizedMethods(ps, i);
+//        SynchronizedMethods t3 = new SynchronizedMethods(ps, i);
+//        Set<SynchronizedMethods> set = Set.of(t1, t2, t3);
+
+        Sync thread1 = new Sync(p, "1");
+        Sync thread2 = new Sync(p, "2");
+        Sync thread3 = new Sync(p, "3");
+        Sync thread4 = new Sync(p, "4");
+        Sync thread5 = new Sync(p, "5");
+        Sync thread6 = new Sync(p, "6");
+        Sync thread7 = new Sync(p, "7");
+        Sync thread8 = new Sync(p, "8");
+        Sync thread9 = new Sync(p, "9");
 
 //            IntStream.range(0, 1000).forEach(count -> service.submit(t1::print));
 
@@ -125,20 +188,31 @@ public class TestConcurrency {
 //        } catch (InterruptedException e) {
 //            e.printStackTrace();
 //        }
-        t1.start();
-        t2.start();
-        t3.start();
+        thread1.start();
+        thread2.start();
+        thread3.start();
+        thread4.start();
+        thread5.start();
+        thread6.start();
+        thread7.start();
+        thread8.start();
 
         long start = System.currentTimeMillis();
-        while (start + 20000 > System.currentTimeMillis()) {
+        while (start + 10000 > System.currentTimeMillis()) {
 
         }
 
-        t1.end();
-        t2.end();
-        t3.end();
+        thread2.end();
+        thread1.end();
+        thread3.end();
+        thread4.end();
+        thread5.end();
+        thread6.end();
+        thread7.end();
+        thread8.end();
+        thread9.end();
 
-        pw.close();
+//        pw.close();
     }
 
 }

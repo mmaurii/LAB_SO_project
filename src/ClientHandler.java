@@ -11,7 +11,7 @@ public class ClientHandler implements Runnable {
     private Topic topic = null;
     private final ArrayList<Message> messages;
     private PrintWriter clientPW;
-    private boolean running = true;
+    private volatile boolean running = true;
 
     //definizione nomi comandi
     private final String sendCommand = "send";
@@ -37,7 +37,7 @@ public class ClientHandler implements Runnable {
             Scanner clientMessage = new Scanner(socket.getInputStream());
             clientPW = new PrintWriter(socket.getOutputStream(), true);
 
-            //controllo che ci sia un comando del client da leggere
+            //controllo se c'è un comando del client da leggere
             while (running && clientMessage.hasNextLine()) {
                 mainLoop(clientMessage);
             }
@@ -335,12 +335,9 @@ public class ClientHandler implements Runnable {
      * Interrompe la connessione al server per questo client.
      */
     public synchronized void quit() {
-        running = false;
-
-        synchronized (clientPW) {
-            clientPW.println(quitCommand);
-            clientPW.close();
-        }
+        running = false; //meglio usare l'interrupt?
+        clientPW.println(quitCommand);
+        clientPW.close();
     }
 
     /**
@@ -350,13 +347,13 @@ public class ClientHandler implements Runnable {
      * @param t  topic dove si trova il messaggio da cancellare
      */
     public void delMessage(Topic t, int id) {           //synchronized
-        synchronized (messages) {//inutile
-            // l'operazione non viene eseguita se il topic passato come parametro
-            // è diverso da quello del client
-            if (topic == t) {
-                messages.removeIf(m -> m.getID() == id);
-            }
+        //synchronized (messages) {//inutile
+        // l'operazione non viene eseguita se il topic passato come parametro
+        // è diverso da quello del client
+        if (topic == t) {
+            messages.removeIf(m -> m.getID() == id);
         }
+        //}
     }
 
     /**
@@ -367,9 +364,9 @@ public class ClientHandler implements Runnable {
      */
     private void addMessage(Message mess) {
         //Salva il messaggio
-        synchronized (messages) {
-            messages.add(mess);
-            topic.addMessage(mess);
-        }
+        //synchronized (messages) {
+        messages.add(mess);
+        topic.addMessage(mess);
+        //}
     }
 }

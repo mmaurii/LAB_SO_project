@@ -29,15 +29,8 @@ public class Server implements Runnable {
     /**
      * @return restituisce true se il server è in fase di ispezione, false altrimenti
      */
-    public synchronized Boolean isInspectedLock() {
+    public Boolean isInspectedLock() {
         return inspectedLock;
-    }
-
-    /**
-     * Cambia lo stato corrente di ispezione del server
-     */
-    private synchronized void changeStatusInspectedLock() {
-        this.inspectedLock = !inspectedLock;
     }
 
     /**
@@ -66,8 +59,10 @@ public class Server implements Runnable {
     /**
      * @return i topic presenti sul server
      */
-    public synchronized HashSet<Topic> getTopics() {
-        return topics;
+    public HashSet<Topic> getTopics() {
+        synchronized (topics) {
+            return topics;
+        }
     }
 
     /**
@@ -148,7 +143,7 @@ public class Server implements Runnable {
             } else {
                 // entro in fase di ispezione
                 synchronized (this) {
-                    changeStatusInspectedLock();
+                    this.inspectedLock = !inspectedLock;
                     inspectedTopic = topicToInspect;
                 }
                 System.out.printf("Ispezionando il topic: %s\n", inspectedTopic.getTitle());
@@ -197,14 +192,17 @@ public class Server implements Runnable {
     /**
      * Termina la fase di ispezione
      */
-    private synchronized void end() {
-        System.out.printf("Fine ispezione del topic %s.",inspectedTopic.getTitle());
-        // Resetta il topic ispezionato
-        inspectedTopic = null;
-        //processo tutti i comandi ricevuti durante l'ispezione
-        executeOperation();
-        // esco dalla fase di ispezione
-        changeStatusInspectedLock();
+    private void end() {
+        System.out.printf("Fine ispezione del topic %s.", inspectedTopic.getTitle());
+
+        synchronized (this) {
+            // Resetta il topic ispezionato
+            inspectedTopic = null;
+            //processo tutti i comandi ricevuti durante l'ispezione
+            executeOperation();
+            // esco dalla fase di ispezione
+            this.inspectedLock = !inspectedLock;
+        }
     }
 
     /**
@@ -223,7 +221,7 @@ public class Server implements Runnable {
     /**
      * @return restituisce il topic che sta venendo ispezionato
      */
-    public synchronized Topic getInspectedTopic() {
+    public Topic getInspectedTopic() {
         return inspectedTopic;
     }
 
@@ -327,7 +325,7 @@ public class Server implements Runnable {
     /**
      * @return true se il server è in esecuzione, false altrimenti
      */
-    public synchronized boolean isRunning() {
+    public boolean isRunning() {
         return running;
     }
 }
