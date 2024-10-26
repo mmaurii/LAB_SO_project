@@ -35,7 +35,6 @@ public class Client {
             receiver.join();
 
             socket.close();
-            System.out.println("Socket chiusa.");
 
         } catch (IOException e) {
             System.err.println("Errore: Il server è irraggiungibile, " +

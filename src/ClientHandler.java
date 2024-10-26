@@ -63,7 +63,7 @@ public class ClientHandler implements Runnable {
         }
         // gestione comandi
         String request = clientMessage.nextLine();
-        System.out.printf("<Ricevuto comando \"%s\">\n", request);
+        //System.out.printf("<Ricevuto comando \"%s\">\n", request);
         String command;
         String parameter = "";
         if (request.indexOf(' ') == -1) {
@@ -234,6 +234,7 @@ public class ClientHandler implements Runnable {
         HashSet<ClientHandler> chSet = topic.getClients();
         synchronized (chSet) {
             for (ClientHandler c : topic.getClients()) {
+                c.forward("Nuovo messaggio pubblicato");
                 c.forward(message.toString());
             }
             addMessage(message);
@@ -336,7 +337,7 @@ public class ClientHandler implements Runnable {
      */
     public synchronized void quit() {
         running = false; //meglio usare l'interrupt?
-        clientPW.println(quitCommand);
+        clientPW.println("Terminata la connessione al server.");
         clientPW.close();
     }
 

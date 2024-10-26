@@ -41,7 +41,7 @@ public class Server implements Runnable {
         Scanner input = new Scanner(System.in);
         while (running) {
             if (inspectedTopic == null) System.out.println("\n> Inserisci comando");
-            else System.out.printf("Inserisci comando (ispezionando topic \"%s\")\n",
+            else System.out.printf("> Inserisci comando (ispezionando topic \"%s\")\n",
                     inspectedTopic.getTitle());
             String command = input.nextLine();
             String[] parts = command.split(" ");
@@ -182,7 +182,7 @@ public class Server implements Runnable {
         if (messages.isEmpty()) {
             System.out.println("Non ci sono messaggi");
         } else {
-            System.out.printf("Sono stati inviati %s messaggi in questo topic.\n", messages.size());
+            System.out.printf("Sono stati inviati %s messaggi in questo topic.", messages.size());
             for (Message m : messages) {
                 System.out.println(m.replyString());
             }

@@ -92,3 +92,138 @@ ecc ecc
 - Comunicazione: Discord e Whatsapp
 ## Requisiti e Istruzioni
 comandi e screenshot vari
+
+
+## Esempi di esecuzione e output
+`@` indica chi sta eseguendo il comando, `>` indica il testo inviato e `<` indica il testo ricevuto. Per motivi di chiarezza non sono stati inlcusi i prompt del server `> Inserisci comando` e `> Inserisci comando (ispezionando topic "<topic>")`.  
+Registrazione di client come publisher
+```
+@ Client
+> publish cibo
+< Registrato come publisher al topic cibo
+```
+Esecuzione del comando subscribe per un publisher
+```
+@ Client(publisher)
+> subscribe cibo
+< Non puoi più eseguire questo comando
+```
+Invio di messaggio
+```
+@ Client(publisher)
+> send
+< Non puoi inviare un messaggio vuoto
+> send carbonara
+< Inviato messaggio "carbonara"
+```
+Ispezione di topic non esistente
+```
+@ Server
+> inspect sport
+< Il topic sport non esiste
+```
+Ispezione di topic esistente
+```
+@ Server
+> inspect cibo
+< Ispezionando il topic: cibo
+```
+Elenco di messaggi inviati sul topic
+```
+@ Server
+> listall
+< Sono stati inviati 1 messaggi in questo topic.
+	- ID: 1
+	  Testo: carbonara
+	  Data: 26/10/2024 - 11:56:45
+```
+Client invia un comando quando il server è in fase di ispezione
+```
+@ Client(publishber)
+> send carbonara 
+< Messaggio "carbonara" in attesa. Il server è in fase d'ispezione.
+```
+Comando non riconosciuto in fase di ispezione
+```
+@ Server
+> quit 
+< Comando non riconosciuto: quit
+```
+Fine ispezione topic
+```
+@ Server
+> end 
+< Fine ispezione del topic cibo.
+```
+Ricezione messaggi con contenuto uguale durante fase di ispezione
+```
+@ Server
+> inspect cibo
+< Ispezionando il topic: cibo
+> listall
+< Sono stati inviati 2 messaggi in questo topic.
+	- ID: 1
+	  Testo: carbonara
+	  Data: 26/10/2024 - 11:56:45
+
+	- ID: 2
+	  Testo: carbonara
+	  Data: 26/10/2024 - 12:07:06
+```
+Cancellazione messaggio con id valido e id invalido
+```
+@ Server
+> delete 2
+< Messaggio eliminato
+> delete 2
+< Messaggio con id 2 non esiste
+> end
+< Fine ispezione del topic cibo.
+```
+Esecuzione non consentita di comandi esclusivi ai publisher o ai subscriber
+```
+@ Client
+> send sport
+< Devi essere registrato come publisher per inviare questo comando
+> listall
+< Devi registrarti come publisher o subscriber prima di poter eseguire questo comando
+> list
+< Devi essere registrato come publisher per inviare questo comando
+```
+Iscrizione a topic non esistente ed esistente ed elenco topic presenti
+```
+@ Client
+> subscribe cinema
+< Il topic inserito non esiste
+> show
+< Topic presenti:
+	  - cibo
+> subscribe cibo
+< Registrato come subscriber al topic cibo
+```
+Elenco dei messaggi sul topic a cui il client è iscritto
+```
+@ Client(publisher)
+> listall 
+< Messaggi:
+	- ID: 1
+    Testo: carbonara
+	  Data: 26/10/2024 - 12:26:21
+```
+Invio messaggio su un topic al quale il subscriber è iscritto
+```
+@ Client(publisher)
+> send matriciana
+< Inviato messaggio "matriciana"
+@ Client(subscriber)
+> Nuovo messaggio pubblicato
+  ID: 1
+  Testo: matriciana
+  Data: 26/10/2024 - 12:55:39
+```
+Arresto client e scollegamento dal server
+```
+@ Client(publisher)
+> quit
+< Terminata la connessione al server.
+```

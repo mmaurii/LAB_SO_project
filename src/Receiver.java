@@ -23,7 +23,6 @@ public class Receiver extends Thread {
             String line;
             while ((line = from.readLine()) != null) {
                 System.out.println(line);
-                //System.out.println("Received: " + line);
                 if (line.equals("quit")) {
                     break;
                 }
@@ -31,12 +30,8 @@ public class Receiver extends Thread {
 
         } catch (IOException e) {
             System.out.println("Il server si è disconnesso");
-
-//            System.err.println("IOException caught: " + e);
-//            e.printStackTrace();
         } finally {
             sender.interrupt();
-            System.out.println("Receiver closed.");
         }
     }
 }
