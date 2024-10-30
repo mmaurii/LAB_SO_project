@@ -1,6 +1,10 @@
 import java.io.IOException;
 import java.net.Socket;
 
+/**
+ * La classe client si preoccupa di istanziare una socket, connettersi al server
+ * e di gestire i thread Sender e Reciver
+ */
 public class Client {
     public static void main(String[] args) {
         // Impostazioni di default per host e porta
@@ -13,7 +17,7 @@ public class Client {
             try {
                 port = Integer.parseInt(args[1]);
             } catch (NumberFormatException e) {
-                System.err.println("Errore: inserisci un numero di porta valido.");
+                System.err.println("Errore: inserisci un numero di porta.");
                 return;
             }
         }

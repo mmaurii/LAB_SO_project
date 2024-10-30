@@ -1,15 +1,21 @@
 import java.util.*;
 
 /**
- * Classe server
+ * La classe Server si occupa di fornire un interfaccia console con cui interfacciarsi
+ * al server. Inoltre mette a disposizione le proprie risorse in maniera sicura e istanzia
+ * durante l'inizializzazione un thread SocketListener.
  */
 public class Server implements Runnable {
+    //set di tutti i topic che sono stati creati sul server
     private final HashSet<Topic> topics = new HashSet<>();
+    //elenco di tutti i client connessi a l server
     private final HashSet<ClientHandler> clients = new HashSet<>();
     private Topic inspectedTopic = null;
     private boolean running = true;
+    //Buffer per i comandi in attesa durante la fase di ispezione
     LinkedList<Command> commandsBuffer = new LinkedList<>();
-    private Boolean inspectedLock = false; // Oggetto di sincronizzazione
+    // Oggetto di sincronizzazione
+    private Boolean inspectedLock = false;
     private SocketListener socketListener;
 
     //definizione nomi comandi
@@ -290,8 +296,8 @@ public class Server implements Runnable {
         synchronized (topics) {
             for (Topic t : topics) {
                 if (topic.equals(t)) {
-                    synchronized (t.getClients()) {
-                        t.getClients().add(client);
+                    synchronized (t.getSubscribers()) {
+                        t.getSubscribers().add(client);
                     }
                     return t;
                 }

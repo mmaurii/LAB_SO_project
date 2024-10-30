@@ -9,6 +9,7 @@ public class Message {
     private final int id;
     private final String text;
     private final LocalDateTime sendDate;
+    //formato della data e dell'ora
     final String DATE_TIME_FORMAT = "dd/MM/yyyy - kk:mm:ss";
 
     public Message(String text) {

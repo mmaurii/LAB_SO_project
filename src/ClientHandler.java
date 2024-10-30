@@ -3,12 +3,17 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.*;
 
+/**
+ * La classe ClientHandler gestisce la comunicazione con uno specifico client garantendo in questo modo
+ * una corretta e sicura interazione con le risorse della classe Server.
+ */
 public class ClientHandler implements Runnable {
     private final Socket socket;
     private final Server server;
     // false = publisher, true = subscriber
     private Boolean publishORSubscribe = null;
     private Topic topic = null;
+    //elenco di tutti i messaggi inviati da questo topic
     private final ArrayList<Message> messages;
     private PrintWriter clientPW;
     private volatile boolean running = true;
@@ -231,9 +236,9 @@ public class ClientHandler implements Runnable {
      */
     public synchronized void sendExecute(Message message) {
         // Invia il messaggio a tutti i subscriber
-        HashSet<ClientHandler> chSet = topic.getClients();
+        HashSet<ClientHandler> chSet = topic.getSubscribers();
         synchronized (chSet) {
-            for (ClientHandler c : topic.getClients()) {
+            for (ClientHandler c : topic.getSubscribers()) {
                 c.forward("Nuovo messaggio pubblicato");
                 c.forward(message.toString());
             }
@@ -317,6 +322,7 @@ public class ClientHandler implements Runnable {
      * @param messageList lista di messaggi
      */
     private void messagePrinter(ArrayList<Message> messageList) {
+        StringBuilder stringBuilder;
         synchronized (messageList) {
             if (messageList.isEmpty()) {
                 clientPW.println("Non ci sono messaggi");
@@ -324,12 +330,12 @@ public class ClientHandler implements Runnable {
             }
 
             // funzionalità
-            StringBuilder stringBuilder = new StringBuilder("Messaggi:");
+            stringBuilder = new StringBuilder("Messaggi:");
             for (Message mess : messageList) {
                 stringBuilder.append(mess.replyString());
             }
-            clientPW.println(stringBuilder);
         }
+        clientPW.println(stringBuilder);
     }
 
     /**

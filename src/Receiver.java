@@ -3,9 +3,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
+/**
+ * La classe Reciver sta in ascolto sulla socket e attende che arrivino messaggi per
+ * presentarli poi a console
+ */
 public class Receiver extends Thread {
     Socket s;
     Sender sender;
+    private final String quitCommand = "quit";
 
     public Receiver(Socket s, Sender sender) {
         this.s = s;
@@ -23,7 +28,7 @@ public class Receiver extends Thread {
             String line;
             while ((line = from.readLine()) != null) {
                 System.out.println(line);
-                if (line.equals("quit")) {
+                if (line.equals(quitCommand)) {
                     break;
                 }
             }

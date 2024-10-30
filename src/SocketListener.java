@@ -3,9 +3,15 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
+/**
+ * La classe SocketListener permette di mettersi in ascolto su una socket per eventuali
+ * nuovi collegamenti da parte di un client. Una volta stabilita la connessione la
+ * comunicazione viene lasciata in gestione a un nuovo thread appositamente istanziato
+ * dalla classe ClientHandler
+ */
 public class SocketListener implements Runnable {
     private final Server server;
-    private ServerSocket serverSocket = null;
+    private final ServerSocket serverSocket;
 
     public SocketListener(Server server, int port) {
         this.server = server;
@@ -28,7 +34,7 @@ public class SocketListener implements Runnable {
                     Socket clientSocket = serverSocket.accept();
                     System.out.printf("Nuova connessione da %s\n", clientSocket.getInetAddress());
                     if (!Thread.interrupted()) {
-                        // crea un nuovo thread per il nuovo socket
+                        // crea un nuovo thread che gestisca la comunicazione istanziata
                         ClientHandler ch = new ClientHandler(clientSocket, server);
                         new Thread(ch).start();
                         server.addClient(ch);
@@ -51,6 +57,9 @@ public class SocketListener implements Runnable {
         }
     }
 
+    /**
+     * Chiude la socket su cui il server è in ascolto per nuovi collegamenti di client
+     */
     public void close() {
         try {
             serverSocket.close();

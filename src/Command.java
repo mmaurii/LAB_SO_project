@@ -3,8 +3,10 @@
  * comandi che il server può ricevere da un client
  */
 public class Command {
+    //nome del comando
     private final String command;
     private final ClientHandler sender;
+    //eventuale contenuto
     private Message message;
 
     public Command(String command, Message message, ClientHandler sender) {

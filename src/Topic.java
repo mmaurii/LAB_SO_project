@@ -6,16 +6,19 @@ import java.util.HashSet;
  * possonono esssere scambiati messaggi
  */
 public class Topic {
+    //nome del topic
     private final String title;
+    //lista di tutti i messaggi che sono stati scambiati su questo topic
     private final ArrayList<Message> messages = new ArrayList<>();
-    private final HashSet<ClientHandler> clients = new HashSet<>();
+    //lista di tutti subscribers che hanno scelto questo topic
+    private final HashSet<ClientHandler> subscribers = new HashSet<>();
 
     public Topic(String title) {
         this.title = title;
     }
 
-    public HashSet<ClientHandler> getClients() {
-        return clients;
+    public HashSet<ClientHandler> getSubscribers() {
+        return subscribers;
     }
     /**
      * @return titolo del topic

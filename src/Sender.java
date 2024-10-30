@@ -4,8 +4,12 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+/**
+ * La classe Sender prende in input da console messaggi e comandi e li invia al server
+ */
 public class Sender extends Thread {
     Socket s;
+    private final String quitCommand = "quit";
 
     public Sender(Socket s) {
         this.s = s;
@@ -27,19 +31,19 @@ public class Sender extends Thread {
                      * "quit" al server e usciamo
                      */
                     if (Thread.interrupted()) {
-                        to.println("quit");
+                        to.println(quitCommand);
                         break;
                     }
                     // in caso contrario proseguiamo e analizziamo l'input inserito
                     to.println(request);
-                    if (request.equals("quit")) {
+                    if (request.equals(quitCommand)) {
                         break;
                     }
                 }
 
                 //controllo se il server si è disconnesso
                 if (Thread.interrupted()) {
-                    to.println("quit");
+                    to.println(quitCommand);
                     System.out.println("Il server si è disconnesso");
                     break;
                 }
