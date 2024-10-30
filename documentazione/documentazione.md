@@ -12,6 +12,22 @@ Il server stesso offre un'interfaccia a linea di comando che permette a un utent
 
 ![classi.svg](classi.svg)
 
+### La macro struttura presentata nella foto precedente è la segguente: 
+Abbiamo inizialmente diviso client e server ed elencato le possibili classi utili per la strutturazione del programma come: Topic, Messaggio, Comando. Quindi abbiamo proceduto a strutturare meglio client e server, che abbiamo suddiviso nelle seguenti classi:
+- Client, Sender, Reciver
+- MainServer, Server, SocketListener, ClientHandler
+Per farlo siamo partiti dal codice fornitoci dal Tutor in quanto ci sembrava già valido e strutturato. Abbiamo scelto di mantenere separato le diverse classi a cui è stato assegnato un compito ben preciso in modo tale da agevolarne la manutenzione e la scrittura.
+
+Client -> si preoccupa di istanziare una socket, connettersi al servere e di gestire i thread relativi al Sender e al Reciver.
+Sender -> prende in input da console messaggi e comandi e li invia al server.
+Reciver -> sta in ascolto sulla socket e attende che arrivino messaggi per presentarli poi a console.
+MainServer -> prende in input le informazioni necessarie a instanziare una nuova socket e avvia un nuovo Server sulla socket specificata mettendosi poi in attesa che termini.
+Server ->  si occupa di fornire un interfaccia console con cui interfacciarsi al server. Inoltre mette a disposizione le proprie risorse in maniera sicura e istanzia un thread SocketListener.
+SocketListener -> si mette in ascolto su una socket per eventuali nuovi collegamenti da parte di un client. Una volta stabilita la connessione questa viene lasciata in gestione alla classe ClientHandler
+ClientHandler -> gestisce la comunicazione con uno specifico client garantendo in questo modo una corretta e sicura interazione con le risorse della classe Server.
+
+###Funzionamento Componenti Principali
+La classe Client quindi delega Il Sender e il Reciver a gestire la comunicazione con il server. Il Sender si preoccupa di ottenere i messaggi dall'utente e di inviarli al server, e il Reciver di ottenere i messaggi dal server e di preseentarli all'utente. Allo stesso modo la classe Server si preoccupa di fornire un interfaccia, tramite i suoi metodi, per accedere alle sue risorse e di prendere in input i comandi dalla console del Server. Quest'ultimo inoltre delega un SocketListener che si metterà in ascolto per eventuali nuove connessioni da parte di alcuni client, stabilita la comunicazione relativa a un client ne passa il controllo a un ClientHandler. Il ClientHandler si preoccuperà di interfacciarsi con la socket e quindi di inviare e ricevere comandi e messaggi dal client e di esaudire poi le sue richieste tramite i metodi che la classe Server gli fornisce.
 ## Meccanismi Applicazione
 
 ### Server
@@ -85,7 +101,10 @@ Quando il server è in fase di ispezione e un client prova a inviare un comando 
 
 ## Problemi e ostacoli
 ### Scanner era bloccante
+### Decidere che strutture dati utilizzare e relativa gestione degli accessi e della sincronizzazione
+### Modalità con cui gestire la sincronizzazione
 ecc ecc
+
 ## Strumenti usati per l'organizzazione
 - Editor: IntelliJ Community Edition
 - Repository codice: GitHub
