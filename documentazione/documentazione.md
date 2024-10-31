@@ -26,7 +26,7 @@ Server ->  si occupa di fornire un interfaccia console con cui interfacciarsi al
 SocketListener -> si mette in ascolto su una socket per eventuali nuovi collegamenti da parte di un client. Una volta stabilita la connessione questa viene lasciata in gestione alla classe ClientHandler
 ClientHandler -> gestisce la comunicazione con uno specifico client garantendo in questo modo una corretta e sicura interazione con le risorse della classe Server.
 
-###Funzionamento Componenti Principali
+### Funzionamento Componenti Principali
 La classe Client quindi delega Il Sender e il Reciver a gestire la comunicazione con il server. Il Sender si preoccupa di ottenere i messaggi dall'utente e di inviarli al server, e il Reciver di ottenere i messaggi dal server e di preseentarli all'utente. Allo stesso modo la classe Server si preoccupa di fornire un interfaccia, tramite i suoi metodi, per accedere alle sue risorse e di prendere in input i comandi dalla console del Server. Quest'ultimo inoltre delega un SocketListener che si metterà in ascolto per eventuali nuove connessioni da parte di alcuni client, stabilita la comunicazione relativa a un client ne passa il controllo a un ClientHandler. Il ClientHandler si preoccuperà di interfacciarsi con la socket e quindi di inviare e ricevere comandi e messaggi dal client e di esaudire poi le sue richieste tramite i metodi che la classe Server gli fornisce.
 ## Meccanismi Applicazione
 
@@ -94,15 +94,31 @@ Quando il server è in fase di ispezione e un client prova a inviare un comando 
 ### Nanni
 - Classi Server e ClientHandler
 - Logiche di comunicazione del paradigma client - server
+- relazione
 ### Amadori
 - Classi Client, Sender, Reciever e Topic
 - Logiche di comunicazione del paradigma client - server
-
+- sincronizzazione
+- relazione
 
 ## Problemi e ostacoli
-### Scanner era bloccante
-### Decidere che strutture dati utilizzare e relativa gestione degli accessi e della sincronizzazione
-### Modalità con cui gestire la sincronizzazione
+### Scanner bloccante
+Inizialmente in alcune classi veniva utilizzato uno scanner per leggerei messaggi da tastiera e questo era per noi un problema in quanto quest'ultimo è bloccante. Il problema si manifestava col non riuscire a chiudere un thread senza l'interazione con l'utente che lo stava utilizzando e con la sovrapposizione di comandi diversi in console.
+
+### Strutture dati da utilizzare e relativa gestione degli accessi e della sincronizzazione
+Ci siamo posti il quesito: "Quali strutture dati è più corretto utilizzare? e come?". Abbiamo valutato se utilizzare strutture dati sincrone, che abbiamo deciso di scartare per spenderci più in prima persona nella sincronizzazione del progetto. Riflettendo su come memorizzare i dati abbiamo deciso di mantenere più strutture rendendo più veloce la lettura dei dati a discapito dell'eliminazione. In sostanza la classe Server mantiene tutti i dati:
+- HashSet<Topic> topics -> lista di tutti i topic
+  Ogni Topic ha una lista di messaggi un titolo e una lista di client iscritti a quel topic
+
+- HashSet<ClientHandler> clients -> lista di tutti i client collegati
+  Ogni ClientHandler ha una sua lista di messaggi che il client ha inviato, il topic su cui i messaggi sono stati inviati e un flag per identificre se quel client è un publisher o un subscriber. Oltre che a un 
+  riferimento al Server per eventuali ulteriori risorse
+
+- LinkedList<Command> commandsBuffer -> lista di tutti i comandi in sospeso
+
+### Modalità di gestione della sincronizzazione
+La sincronizzazione è stata gestita in prevalenza con metodi synchronyzed o blocchi synchronyzed, abbiamo valutato se interpellare metodi wait, notify, semafori o altro ma ci è sembrato inutile oltreche complesso. 
+Il meccanismo dei comandi sospesi viene implementato acquisendo il lock sul server e switchando la variabile booleana inspectedLock. In questo modo è semppre posssibile sapere se si è in una fase di ispezione o no. L'accesso alle strutture dati o a variabili condivise avviene sempre tramite il costrutto synchronized, ed in modo tale da ottenere sempre un lock il più specifico possibile e il più breve possibile .In questo modo non si tiene bloccata una risorsa che potrebbe servire ad alti thread. 
 ecc ecc
 
 ## Strumenti usati per l'organizzazione
