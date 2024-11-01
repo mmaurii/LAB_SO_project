@@ -7,30 +7,35 @@
   - Alessandro Nanni `0001027757`
 
 ## Architettura generale
-Il paradigma di alto livello implementato è di tipo client - server. Il client si preoccupa di ottenere da console i comandi e i messaggi dell'utente e di spedirli al server, andando poi a mostrare le risposte che quest'ultimo gli fornisce. Il server invece si preoccupa di ricevere messaggi e comandi verificarne la validità e dare una risposta consona al client.  
+Il paradigma di alto livello implementato è di tipo client - server. Il client si preoccupa di ottenere da console i comandi e i messaggi dell'utente e di spedirli al server, andando poi a mostrare le risposte che quest'ultimo gli fornisce. Il server invece si preoccupa di ricevere messaggi e comandi, verificarne la validità, e dare una risposta consona al client.  
 Il server stesso offre un'interfaccia a linea di comando che permette a un utente di svolgere operazioni su quest'ultimo in maniera sicura. Senza intaccare quindi il corretto svolgimento di operazione da parte del server su richiesta del client.
 
 ![classi.svg](classi.svg)
 
-### La macro struttura presentata nella foto precedente è la segguente: 
-Abbiamo inizialmente diviso client e server ed elencato le possibili classi utili per la strutturazione del programma come: Topic, Messaggio, Comando. Quindi abbiamo proceduto a strutturare meglio client e server, che abbiamo suddiviso nelle seguenti classi:
+### Idea alla base: 
+Abbiamo inizialmente diviso client e server ed elencato le possibili classi utili per la strutturazione del programma come: Topic, Messaggio, Comando. Riflettendo sulle differenze tra Subscriber e Publisher pensavamo inizialmente di fare due classi separate, queste avrebbero ereditato alcuni campi e metodi da una superclasse Client. Abbiamo poi deciso di fare solo una classe generale Client per non complicare la fase di instauramento della comunicazione. Quindi abbiamo proceduto a strutturare meglio client e server, che abbiamo suddiviso nelle seguenti classi:
 - Client, Sender, Reciver
 - MainServer, Server, SocketListener, ClientHandler
+
 Per farlo siamo partiti dal codice fornitoci dal Tutor in quanto ci sembrava già valido e strutturato. Abbiamo scelto di mantenere separato le diverse classi a cui è stato assegnato un compito ben preciso in modo tale da agevolarne la manutenzione e la scrittura.
 
-Client -> si preoccupa di istanziare una socket, connettersi al servere e di gestire i thread relativi al Sender e al Reciver.
-Sender -> prende in input da console messaggi e comandi e li invia al server.
-Reciver -> sta in ascolto sulla socket e attende che arrivino messaggi per presentarli poi a console.
-MainServer -> prende in input le informazioni necessarie a instanziare una nuova socket e avvia un nuovo Server sulla socket specificata mettendosi poi in attesa che termini.
-Server ->  si occupa di fornire un interfaccia console con cui interfacciarsi al server. Inoltre mette a disposizione le proprie risorse in maniera sicura e istanzia un thread SocketListener.
-SocketListener -> si mette in ascolto su una socket per eventuali nuovi collegamenti da parte di un client. Una volta stabilita la connessione questa viene lasciata in gestione alla classe ClientHandler
-ClientHandler -> gestisce la comunicazione con uno specifico client garantendo in questo modo una corretta e sicura interazione con le risorse della classe Server.
+- Client -> si preoccupa di istanziare una socket, connettersi al servere e di gestire i thread relativi al Sender e al Reciver.
+- Sender -> prende in input da console messaggi e comandi e li invia al server.
+- Reciver -> sta in ascolto sulla socket e attende che arrivino messaggi per presentarli poi a console.
+- MainServer -> prende in input le informazioni necessarie a instanziare una nuova socket e avvia un nuovo Server sulla socket specificata mettendosi poi in attesa che termini.
+- Server ->  si occupa di fornire un interfaccia console con cui interfacciarsi al server. Inoltre mette a disposizione le proprie risorse in maniera sicura e istanzia un thread SocketListener.
+- SocketListener -> si mette in ascolto su una socket per eventuali nuovi collegamenti da parte di un client. Una volta stabilita la connessione questa viene lasciata in gestione alla classe ClientHandler
+- ClientHandler -> gestisce la comunicazione con uno specifico client garantendo in questo modo una corretta e sicura interazione con le risorse della classe Server.
 
 ### Funzionamento Componenti Principali
-La classe Client quindi delega Il Sender e il Reciver a gestire la comunicazione con il server. Il Sender si preoccupa di ottenere i messaggi dall'utente e di inviarli al server, e il Reciver di ottenere i messaggi dal server e di preseentarli all'utente. Allo stesso modo la classe Server si preoccupa di fornire un interfaccia, tramite i suoi metodi, per accedere alle sue risorse e di prendere in input i comandi dalla console del Server. Quest'ultimo inoltre delega un SocketListener che si metterà in ascolto per eventuali nuove connessioni da parte di alcuni client, stabilita la comunicazione relativa a un client ne passa il controllo a un ClientHandler. Il ClientHandler si preoccuperà di interfacciarsi con la socket e quindi di inviare e ricevere comandi e messaggi dal client e di esaudire poi le sue richieste tramite i metodi che la classe Server gli fornisce.
-## Meccanismi Applicazione
+#### CLIENT
+La classe Client delega Il Sender e il Reciver a gestire la comunicazione con il server. Il Sender si preoccupa di ottenere i messaggi dall'utente e di inviarli al server, e il Reciver di ottenere i messaggi dal server e di preseentarli all'utente. 
+#### SERVER
+La classe Server si preoccupa di fornire un interfaccia, tramite i suoi metodi, per accedere alle sue risorse e di prendere in input i comandi tramite la console. Il Server inoltre delega un SocketListener che si metterà in ascolto per eventuali nuove connessioni da parte di alcuni client, stabilita la comunicazione relativa a un client ne passa il controllo a un ClientHandler. Il ClientHandler si preoccuperà di interfacciarsi con la socket e quindi di inviare e ricevere comandi e messaggi da un client specifico. Esaudendo poi le sue richieste tramite i metodi che la classe Server gli fornisce.
 
-### Server
+## Descrizione dettagliata delle singole componenti
+
+### Server AGGIORNARE!!!!
 #### Overview
 La classe server ha una ServerSocket che permette ai client di connettersi a esso. Nel suo main thread resta in ascolto per i comandi da console. Dispone di un thread separato in cui accetta i client in arrivo. Ogni volta che un client si connette viene creato un ClientHandler associato a esso, il quale viene aggiunto alla lista dei client. Uno Scanner viene usato per inviare comandi da tastiera, che vengono poi differenziati tra comandi in modalità ispezione e non.
 #### Invio comandi
@@ -86,22 +91,30 @@ Un messaggio dispone di un id, il testo del messaggio e la data di invio.
 #### Overview
 Quando il server è in fase di ispezione e un client prova a inviare un comando a esso, viene creato un nuovo oggetto Command che contiene il comando, eventuali parametri e il ClientHandler che lo ha inviato. Il nuovo comando viene poi aggiunto a una lista di comandi in attesa nel server.
 
+## Logiche di gestione dei dati
+
+
+## Logiche di gestione della comunicazione
+
 
 ## Suddivisione compiti *da aggiornare*
 ### Magrini
-- Classi Message e Client
+- Classi: Message e Client
 - Implementazione della struttura dei messaggi di output
 ### Nanni
-- Classi Server e ClientHandler
+- Classi: Server e ClientHandler
 - Logiche di comunicazione del paradigma client - server
 - relazione
 ### Amadori
-- Classi Client, Sender, Reciever e Topic
+- Classi: Client, Sender, Reciever e Topic
 - Logiche di comunicazione del paradigma client - server
+- logiche di gestione dei dati e delle risorse
 - sincronizzazione
 - relazione
 
 ## Problemi e ostacoli
+parla di ideamento e sviluppo dell'aplicazione. Idee e scelte fatte/alternative
+
 ### Scanner bloccante
 Inizialmente in alcune classi veniva utilizzato uno scanner per leggerei messaggi da tastiera e questo era per noi un problema in quanto quest'ultimo è bloccante. Il problema si manifestava col non riuscire a chiudere un thread senza l'interazione con l'utente che lo stava utilizzando e con la sovrapposizione di comandi diversi in console.
 
@@ -117,15 +130,19 @@ Ci siamo posti il quesito: "Quali strutture dati è più corretto utilizzare? e 
 - LinkedList<Command> commandsBuffer -> lista di tutti i comandi in sospeso
 
 ### Modalità di gestione della sincronizzazione
-La sincronizzazione è stata gestita in prevalenza con metodi synchronyzed o blocchi synchronyzed, abbiamo valutato se interpellare metodi wait, notify, semafori o altro ma ci è sembrato inutile oltreche complesso. 
-Il meccanismo dei comandi sospesi viene implementato acquisendo il lock sul server e switchando la variabile booleana inspectedLock. In questo modo è semppre posssibile sapere se si è in una fase di ispezione o no. L'accesso alle strutture dati o a variabili condivise avviene sempre tramite il costrutto synchronized, ed in modo tale da ottenere sempre un lock il più specifico possibile e il più breve possibile .In questo modo non si tiene bloccata una risorsa che potrebbe servire ad alti thread. 
+- La sincronizzazione è stata gestita in prevalenza con metodi synchronyzed o blocchi synchronyzed, abbiamo valutato se interpellare metodi wait, notify, semafori o altro ma ci è sembrato inutile oltreche complesso. 
+- Il meccanismo dei comandi sospesi viene implementato acquisendo il lock sul server e switchando la variabile booleana inspectedLock. In questo modo è semppre posssibile sapere se si è in una fase di ispezione o no. L'accesso alle strutture dati o a variabili condivise avviene sempre tramite il costrutto synchronized, ed in modo tale da ottenere sempre un lock il più specifico possibile e il più breve possibile .In questo modo non si tiene bloccata una risorsa che potrebbe servire ad alti thread. 
 ecc ecc
+
+### Instaurazione gestione e chiusura della comunicazione
+
 
 ## Strumenti usati per l'organizzazione
 - Editor: IntelliJ Community Edition
 - Repository codice: GitHub
 - Comunicazione: Discord e Whatsapp
-## Requisiti e Istruzioni
+
+## Come compilare e utilizzare l'applicazione?
 comandi e screenshot vari
 
 
