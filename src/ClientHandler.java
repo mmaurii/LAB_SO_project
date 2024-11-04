@@ -9,7 +9,7 @@ import java.util.*;
  */
 public class ClientHandler implements Runnable {
     private final Socket socket;
-    private final Server server;
+    private final Resource resource;
     // false = publisher, true = subscriber
     private Boolean publishORSubscribe = null;
     private Topic topic = null;
@@ -29,7 +29,7 @@ public class ClientHandler implements Runnable {
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
-        this.server = server;
+        this.resource = server.getResource();
         this.messages = new ArrayList<>();
     }
 
@@ -44,7 +44,7 @@ public class ClientHandler implements Runnable {
 
             //controllo se c'è un comando del client da leggere
             while (running && clientMessage.hasNextLine()) {
-                mainLoop(clientMessage);
+                commandReciver(clientMessage);
             }
 
         } catch (IOException e) {
@@ -59,7 +59,7 @@ public class ClientHandler implements Runnable {
      *
      * @param clientMessage comando inviato dal client
      */
-    private synchronized void mainLoop(Scanner clientMessage) {
+    private void commandReciver(Scanner clientMessage) {
         if (Thread.currentThread().isInterrupted()) {
             // Gestione interruzione
             System.out.println("Thread interrotto.");
@@ -92,7 +92,7 @@ public class ClientHandler implements Runnable {
     /**
      * Chiude la socket e gestisce eventuali errori di chiusura.
      */
-    private synchronized void closeSocket() {
+    private void closeSocket() {
         if (socket != null && !socket.isClosed()) {
             try {
                 socket.close();
@@ -122,7 +122,7 @@ public class ClientHandler implements Runnable {
 
         clientPW.printf("Registrato come publisher al topic %s\n", parameter);
         publishORSubscribe = false;
-        this.topic = server.addTopic(new Topic(parameter));
+        this.topic = resource.addTopic(new Topic(parameter));
     }
 
     /**
@@ -142,7 +142,7 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        this.topic = server.addSubscriber(this, new Topic(parameter));
+        this.topic = resource.addSubscriber(this, new Topic(parameter));
 
         if (topic == null) {
             clientPW.println("Il topic inserito non esiste");
@@ -156,20 +156,13 @@ public class ClientHandler implements Runnable {
      * elenca i topic presenti
      */
     private void show() {
-        HashSet<Topic> topicSet = server.getTopics();
+        String listOfTopics = resource.show();
 
-        StringBuilder output;
-        synchronized (topicSet) {
-            if (!topicSet.isEmpty()) {
-                output = new StringBuilder("Topic presenti:");
-                for (Topic t : topicSet) {
-                    output.append("\n\t- ").append(t.getTitle());
-                }
-            } else {
-                output = new StringBuilder("Non ci sono topic disponibili");
-            }
+        if (listOfTopics.isEmpty()) {
+            clientPW.println("Non sono presenti topic");
+        } else {
+            clientPW.println(listOfTopics);
         }
-        clientPW.println(output);
     }
 
     /**
@@ -210,14 +203,13 @@ public class ClientHandler implements Runnable {
                 //creo il messaggio
                 Message mess = new Message(text);
                 //controllo se il server è in fase di ispezione
-                synchronized (server) {
-                    if (server.isInspectedLock()) {
+                    if (!resource.inspectedTopicIsNull()) {
                         // Controlla se il topic in ispezione è lo stesso del topic di questo client
-                        if (server.getInspectedTopic().equals(topic)) {
+                        if (resource.equalsInpectedTopic(topic)) {
                             // Messaggio in attesa
                             clientPW.printf("Messaggio \"%s\" in attesa. Il server è in fase d'ispezione.\n", text);
                             Command command = new Command(sendCommand, mess, this);
-                            server.addCommand(command);
+                            resource.addCommand(command);
                             return;
                         }
                     }
@@ -225,7 +217,7 @@ public class ClientHandler implements Runnable {
                     sendExecute(mess);
                     clientPW.printf("Inviato messaggio \"%s\"\n", text);
                 }
-            }
+
         }
     }
 
@@ -261,18 +253,16 @@ public class ClientHandler implements Runnable {
      */
     private void list() {
         if (isPublisherCommand(listCommand)) {
-            synchronized (server) {
-                //controllo se il server è in fase di ispezione
-                if (server.isInspectedLock()) {
-                    // Controlla se il topic in ispezione è lo stesso del topic di questo client
-                    if (server.getInspectedTopic().equals(topic)) {
-                        clientPW.printf("Comando \"list\" in attesa. Il server è in fase d'ispezione.\n");
-                        server.addCommand(new Command(listCommand, this));
-                        return;
-                    }
+            //controllo se il server è in fase di ispezione
+            if (!resource.inspectedTopicIsNull()) {
+                // Controlla se il topic in ispezione è lo stesso del topic di questo client
+                if (resource.equalsInpectedTopic(topic)) {
+                    clientPW.printf("Comando \"list\" in attesa. Il server è in fase d'ispezione.\n");
+                    resource.addCommand(new Command(listCommand, this));
+                    return;
                 }
-                listExecute();
             }
+            listExecute();
         }
     }
 
@@ -281,8 +271,20 @@ public class ClientHandler implements Runnable {
      * pubblicato sul topic
      */
     public synchronized void listExecute() {
-        messagePrinter(messages);
-    }
+        StringBuilder stringBuilder;
+        synchronized (messages) {
+            if (messages.isEmpty()) {
+                clientPW.println("Non ci sono messaggi");
+                return;
+            }
+
+            // funzionalità
+            stringBuilder = new StringBuilder("Messaggi:");
+            for (Message mess : messages) {
+                stringBuilder.append(mess.replyString());
+            }
+        }
+        clientPW.println(stringBuilder);    }
 
     /**
      * Prova ad eseguire il comando listAll se il server non è in fase
@@ -295,47 +297,29 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        synchronized (server) {
-            if (server.isInspectedLock()) {
-                // Controlla se il topic in ispezione è lo stesso del topic di questo client
-                if (server.getInspectedTopic().equals(topic)) {
-                    clientPW.printf("Comando \"listall\" in attesa. Il server è in fase d'ispezione.\n");
-                    server.addCommand(new Command(listAllCommand, this));
-                    return;
-                }
+        if (!resource.inspectedTopicIsNull()) {
+            // Controlla se il topic in ispezione è lo stesso del topic di questo client
+            if (resource.equalsInpectedTopic(topic)) {
+                clientPW.printf("Comando \"listall\" in attesa. Il server è in fase d'ispezione.\n");
+                resource.addCommand(new Command(listAllCommand, this));
+                return;
             }
-            listallExecute();
         }
+        listallExecute();
+
     }
 
     /**
      * Elenca tutti i messaggi inviati sul topic
      */
     public synchronized void listallExecute() {
-        ArrayList<Message> messageList = topic.getMessages();
-        messagePrinter(messageList);
-    }
+        String result = resource.listAll(topic);
 
-    /**
-     * Data una lista di messaggi provvede a inviarla al client
-     *
-     * @param messageList lista di messaggi
-     */
-    private void messagePrinter(ArrayList<Message> messageList) {
-        StringBuilder stringBuilder;
-        synchronized (messageList) {
-            if (messageList.isEmpty()) {
-                clientPW.println("Non ci sono messaggi");
-                return;
-            }
-
-            // funzionalità
-            stringBuilder = new StringBuilder("Messaggi:");
-            for (Message mess : messageList) {
-                stringBuilder.append(mess.replyString());
-            }
+        if (result.isEmpty()) {
+            System.out.println("Non ci sono messaggi");
+        } else {
+            clientPW.println(result);
         }
-        clientPW.println(stringBuilder);
     }
 
     /**

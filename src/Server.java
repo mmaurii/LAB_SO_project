@@ -6,17 +6,9 @@ import java.util.*;
  * durante l'inizializzazione un thread SocketListener.
  */
 public class Server implements Runnable {
-    //set di tutti i topic che sono stati creati sul server
-    private final HashSet<Topic> topics = new HashSet<>();
-    //elenco di tutti i client connessi a l server
-    private final HashSet<ClientHandler> clients = new HashSet<>();
-    private Topic inspectedTopic = null;
-    private boolean running = true;
-    //Buffer per i comandi in attesa durante la fase di ispezione
-    LinkedList<Command> commandsBuffer = new LinkedList<>();
-    // Oggetto di sincronizzazione
-    private Boolean inspectedLock = false;
+    private Boolean running = true;
     private SocketListener socketListener;
+    private Resource resource = null;
 
     //definizione nomi comandi
     private final String deleteCommand = "delete";
@@ -27,16 +19,14 @@ public class Server implements Runnable {
     private final String showCommand = "show";
 
     public Server(int portNumber) {
+        this.resource = new Resource();
         this.socketListener = new SocketListener(this, portNumber);
         Thread socketListenerThread = new Thread(socketListener);
         socketListenerThread.start();
     }
 
-    /**
-     * @return restituisce true se il server è in fase di ispezione, false altrimenti
-     */
-    public Boolean isInspectedLock() {
-        return inspectedLock;
+    public Resource getResource() {
+        return resource;
     }
 
     /**
@@ -46,12 +36,12 @@ public class Server implements Runnable {
     public void run() {
         Scanner input = new Scanner(System.in);
         while (running) {
-            if (inspectedTopic == null) System.out.println("\n> Inserisci comando");
+            if (resource.inspectedTopicIsNull()) System.out.println("\n> Inserisci comando");
             else System.out.printf("> Inserisci comando (ispezionando topic \"%s\")\n",
-                    inspectedTopic.getTitle());
+                    resource.getInspectedTopic().getTitle());
             String command = input.nextLine();
             String[] parts = command.split(" ");
-            if (inspectedTopic == null) {
+            if (resource.inspectedTopicIsNull()) {
                 if (parts.length == 1) notInspecting(parts[0], null);
                 if (parts.length == 2) notInspecting(parts[0], parts[1]);
             } else {
@@ -59,15 +49,6 @@ public class Server implements Runnable {
                 if (parts.length == 1) inspecting(parts[0], null);
                 if (parts.length == 2) inspecting(parts[0], parts[1]);
             }
-        }
-    }
-
-    /**
-     * @return i topic presenti sul server
-     */
-    public HashSet<Topic> getTopics() {
-        synchronized (topics) {
-            return topics;
         }
     }
 
@@ -105,32 +86,15 @@ public class Server implements Runnable {
      * Chiude tutte le connessioni coi client e arresta il server
      */
     private void quit() {
-        running = false;
-        System.out.println("Interruzione dei client connessi");
-        synchronized (clients) {
-            for (ClientHandler client : this.clients) {
-                System.out.printf("Interruzione client %s\n", client);
-                client.quit();
-            }
+        synchronized (running) {
+            running = false;
         }
+        System.out.println("Interruzione dei client connessi:");
+
+        String result = resource.clientInterrupt();
+        System.out.println(result);
 
         socketListener.close();
-    }
-
-    /**
-     * Mostra i topic al server, se ce ne sono
-     */
-    private void show() {
-        synchronized (topics) {
-            if (topics.isEmpty()) {
-                System.out.println("Non sono presenti topic");
-            } else {
-                System.out.println("Topic presenti:");
-                for (Topic t : topics) {
-                    System.out.printf("\t- %s\n", t.getTitle());
-                }
-            }
-        }
     }
 
     /**
@@ -143,92 +107,25 @@ public class Server implements Runnable {
         if (topicName == null) {
             System.out.println("Inserisci il nome del topic da ispezionare.");
         } else {
-            Topic topicToInspect = getTopicFromTitle(topicName);
+            Topic topicToInspect = resource.getTopicFromTitle(topicName);
             if (topicToInspect == null) {
                 System.out.printf("Il topic %s non esiste.\n", topicName);
             } else {
                 // entro in fase di ispezione
-                synchronized (this) {
-                    this.inspectedLock = !inspectedLock;
-                    inspectedTopic = topicToInspect;
-                }
-                System.out.printf("Ispezionando il topic: %s\n", inspectedTopic.getTitle());
+                resource.setInspectedTopic(topicToInspect);
+                System.out.printf("Ispezionando il topic: %s\n", resource.getInspectedTopic().getTitle());
             }
         }
     }
 
-    /**
-     * Restituisce il topic dato il suo titolo
-     *
-     * @param title titolo del topic da restituire
-     * @return il topic richiesto, null se non è stato trovato
-     */
-    private Topic getTopicFromTitle(String title) {
-        synchronized (topics) {
-            for (Topic t : topics) {
-                if (Objects.equals(t.getTitle(), title)) {
-                    return t;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Elenca tutti i messaggi nel topic selezionato col comando
-     * inspect durante la fase di ispezione
-     */
-    private void listAll() {
-        if (inspectedTopic == null) {
-            System.out.println("Nessun topic in fase di ispezione.");
-            return;
-        }
-
-        ArrayList<Message> messages = inspectedTopic.getMessages();
-        if (messages.isEmpty()) {
-            System.out.println("Non ci sono messaggi");
-        } else {
-            System.out.printf("Sono stati inviati %s messaggi in questo topic.", messages.size());
-            for (Message m : messages) {
-                System.out.println(m.replyString());
-            }
-        }
-    }
 
     /**
      * Termina la fase di ispezione
      */
     private void end() {
-        System.out.printf("Fine ispezione del topic %s.", inspectedTopic.getTitle());
-
-        synchronized (this) {
-            // Resetta il topic ispezionato
-            inspectedTopic = null;
-            //processo tutti i comandi ricevuti durante l'ispezione
-            executeOperation();
-            // esco dalla fase di ispezione
-            this.inspectedLock = !inspectedLock;
-        }
-    }
-
-    /**
-     * Esegue i comandi presenti sul commandBuffer
-     * che sono stati ricevuti durante la fase di ispezione
-     */
-    private void executeOperation() {
-        synchronized (commandsBuffer) {
-            for (Command command : commandsBuffer) {
-                command.execute();
-            }
-            commandsBuffer.clear();
-        }
-    }
-
-    /**
-     * @return restituisce il topic che sta venendo ispezionato
-     */
-    public Topic getInspectedTopic() {
-        return inspectedTopic;
+        System.out.printf("Fine ispezione del topic %s.", resource.getInspectedTopic().getTitle());
+        //esco dalla fase di ispezione
+        resource.setInspectedTopic(null);
     }
 
     /**
@@ -240,81 +137,47 @@ public class Server implements Runnable {
         int id;
         try {
             id = Integer.parseInt(parameter);
-            // da cambiare in base a come decidiamo di fare l'id
-            ArrayList<Message> messages = inspectedTopic.getMessages();
-            int initialSize = messages.size();
-            // Costrutto simile all'Iterator per rimuovere con
-            // sicurezza un elemento da una lista se soddisfa una condizione
-            synchronized (messages) {//inutile
-                messages.removeIf(m -> m.getID() == id);
-            }
 
-            synchronized (clients) {
-                for (ClientHandler ch : clients) {
-                    ch.delMessage(inspectedTopic, id);
-                }
-            }
-            // confronto le dimensioni della lista per capire se è stato cancellato un elemento
-            if (initialSize == messages.size()) {
-                System.out.printf("Messaggio con id %s non esiste\n", id);
-            } else {
-                System.out.println("Messaggio eliminato");
-            }
+            String OpResult = resource.delete(id);
+
+            System.out.println(OpResult);
         } catch (NumberFormatException e) {
             System.out.printf("%s non è un valore valido\n", parameter);
         }
-
     }
 
     /**
-     * Aggiunge un topic se non è presente
-     *
-     * @param topic topic che si vuole aggiungere
+     * Mostra i topic al server, se ce ne sono
      */
-    public synchronized Topic addTopic(Topic topic) {
-        synchronized (topics) {
-            for (Topic t : topics) {
-                if (topic.equals(t)) {
-                    return t;
-                }
-            }
+    private void show() {
+        String listOfTopics = resource.show();
 
-            topics.add(topic);
-            return topic;
+        if (listOfTopics.isEmpty()) {
+            System.out.println("Non sono presenti topic");
+        } else {
+            System.out.println("Topic presenti:");
+            System.out.printf("\t- %s\n", listOfTopics);
         }
     }
 
-
     /**
-     * Aggiunge un subscriber a un topic
-     *
-     * @param client subscriber da iscrivere
-     * @param topic  topic a cui iscrivere il subscriber
-     * @return il topic a cui si è iscritto il client, null se non è presente quel topic
+     * Elenca tutti i messaggi nel topic selezionato col comando
+     * inspect durante la fase di ispezione
      */
-    public synchronized Topic addSubscriber(ClientHandler client, Topic topic) {
-        synchronized (topics) {
-            for (Topic t : topics) {
-                if (topic.equals(t)) {
-                    synchronized (t.getSubscribers()) {
-                        t.getSubscribers().add(client);
-                    }
-                    return t;
-                }
-            }
+    public void listAll() {
+        if(resource.inspectedTopicIsNull()) {
+            System.out.println("Nessun topic in fase di ispezione.");
+            return;
         }
-        return null;
-    }
 
-    /**
-     * Aggiunge un commando al commandBuffer
-     *
-     * @param command comando da aggiungere
-     */
-    public synchronized void addCommand(Command command) {
-        synchronized (commandsBuffer) {
-            this.commandsBuffer.addLast(command);
+        String result = resource.listAll(null);
+
+        if (result.isEmpty()) {
+            System.out.println("Non ci sono messaggi");
+        } else {
+            System.out.println(result);
         }
+
     }
 
     /**
@@ -332,6 +195,8 @@ public class Server implements Runnable {
      * @return true se il server è in esecuzione, false altrimenti
      */
     public boolean isRunning() {
-        return running;
+        synchronized (running) {
+            return running;
+        }
     }
 }
