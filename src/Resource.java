@@ -212,4 +212,10 @@ public class Resource {
         }
         return sb.toString();
     }
+
+    public void addClient(ClientHandler ch) {
+        synchronized (clients) {
+            this.clients.add(ch);
+        }
+    }
 }

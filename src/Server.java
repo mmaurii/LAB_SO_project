@@ -186,9 +186,7 @@ public class Server implements Runnable {
      * @param ch ClientHandler da aggiungere
      */
     public void addClient(ClientHandler ch) {
-        synchronized (clients) {
-            this.clients.add(ch);
-        }
+        resource.addClient(ch);
     }
 
     /**
