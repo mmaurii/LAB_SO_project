@@ -7,8 +7,8 @@ import java.util.*;
  */
 public class Server implements Runnable {
     private Boolean running = true;
-    private SocketListener socketListener;
-    private Resource resource = null;
+    private final SocketListener socketListener;
+    private final Resource resource;
 
     //definizione nomi comandi
     private final String deleteCommand = "delete";
@@ -36,11 +36,16 @@ public class Server implements Runnable {
     public void run() {
         Scanner input = new Scanner(System.in);
         while (running) {
-            if (resource.inspectedTopicIsNull()) System.out.println("\n> Inserisci comando");
-            else System.out.printf("> Inserisci comando (ispezionando topic \"%s\")\n",
-                    resource.getInspectedTopic().getTitle());
+            if (resource.inspectedTopicIsNull()){
+                System.out.println("\n> Inserisci comando");
+            } else{
+                System.out.printf("> Inserisci comando (ispezionando topic \"%s\")\n",
+                        resource.getInspectedTopicTitle());
+            }
+
             String command = input.nextLine();
             String[] parts = command.split(" ");
+
             if (resource.inspectedTopicIsNull()) {
                 if (parts.length == 1) notInspecting(parts[0], null);
                 if (parts.length == 2) notInspecting(parts[0], parts[1]);
@@ -89,10 +94,10 @@ public class Server implements Runnable {
         synchronized (running) {
             running = false;
         }
-        System.out.println("Interruzione dei client connessi:");
 
-        String result = resource.clientInterrupt();
-        System.out.println(result);
+        System.out.println("Interruzione dei client connessi:");
+        String quitMessage = resource.clientInterrupt();
+        System.out.println(quitMessage);
 
         socketListener.close();
     }
@@ -111,9 +116,11 @@ public class Server implements Runnable {
             if (topicToInspect == null) {
                 System.out.printf("Il topic %s non esiste.\n", topicName);
             } else {
-                // entro in fase di ispezione
-                resource.setInspectedTopic(topicToInspect);
-                System.out.printf("Ispezionando il topic: %s\n", resource.getInspectedTopic().getTitle());
+                synchronized (resource) {
+                    // entro in fase di ispezione
+                    resource.setInspectedTopic(topicToInspect);
+                    System.out.printf("Ispezionando il topic: %s\n", resource.getInspectedTopicTitle());
+                }
             }
         }
     }
@@ -123,9 +130,11 @@ public class Server implements Runnable {
      * Termina la fase di ispezione
      */
     private void end() {
-        System.out.printf("Fine ispezione del topic %s.", resource.getInspectedTopic().getTitle());
-        //esco dalla fase di ispezione
-        resource.setInspectedTopic(null);
+        synchronized (resource) {
+            System.out.printf("Fine ispezione del topic %s.", resource.getInspectedTopicTitle());
+            //esco dalla fase di ispezione
+            resource.setInspectedTopic(null);
+        }
     }
 
     /**
@@ -165,7 +174,7 @@ public class Server implements Runnable {
      * inspect durante la fase di ispezione
      */
     public void listAll() {
-        if(resource.inspectedTopicIsNull()) {
+        if (resource.inspectedTopicIsNull()) {
             System.out.println("Nessun topic in fase di ispezione.");
             return;
         }

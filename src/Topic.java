@@ -10,16 +10,15 @@ public class Topic {
     private final String title;
     //lista di tutti i messaggi che sono stati scambiati su questo topic
     private final ArrayList<Message> messages = new ArrayList<>();
+    final Object messagesLock = new Object();
     //lista di tutti subscribers che hanno scelto questo topic
     private final HashSet<ClientHandler> subscribers = new HashSet<>();
+    final Object subscribersLock = new Object();
 
     public Topic(String title) {
         this.title = title;
     }
 
-    public HashSet<ClientHandler> getSubscribers() {
-        return subscribers;
-    }
     /**
      * @return titolo del topic
      */
@@ -27,25 +26,39 @@ public class Topic {
         return title;
     }
 
-    /**
-     * @return restituisce i messaggi pubblicati su quel topic
-     */
-    public ArrayList<Message> getMessages() {
-        return messages;
+
+    public String getStringMessages(){
+        synchronized (messagesLock) {
+            if (messages.isEmpty()) {
+                return "";
+            } else {
+                StringBuilder sb = new StringBuilder();
+
+                sb.append("Sono stati inviati " + messages.size() + " messaggi in questo topic.\n");
+                sb.append("MESSAGGI:");
+                for (Message m : messages) {
+                    sb.append(m.replyString());
+                }
+
+                return sb.toString();
+            }
+        }
     }
 
     /**
      * @param message messaggio da aggiungere al topic
      */
-    public synchronized void addMessage(Message message) {
-        messages.add(message);
+    public void addMessage(Message message) {
+        synchronized (messagesLock) {
+            messages.add(message);
+        }
     }
 
     /**
      * Controlla se due topic sono uguali in base al titolo
      */
     @Override
-    public boolean equals(Object obj) {
+    public synchronized boolean equals(Object obj) {
         if (obj instanceof Topic) {
             return ((Topic) obj).title.equals(title);
         }
@@ -60,5 +73,26 @@ public class Topic {
     @Override
     public String toString(){
         return String.format("%s: %s",title,messages);
+    }
+
+    public boolean removeMessage(int id) {
+        synchronized (messagesLock) {
+            return messages.removeIf(m -> m.getID() == id);
+        }
+    }
+
+    public void addSubscriber(ClientHandler client) {
+        synchronized (subscribersLock){
+            subscribers.add(client);
+        }
+    }
+
+    public void forwardToAll(Message message) {
+        synchronized (subscribersLock) {
+            for (ClientHandler c : subscribers) {
+                c.forward("Nuovo messaggio pubblicato");
+                c.forward(message.toString());
+            }
+        }
     }
 }

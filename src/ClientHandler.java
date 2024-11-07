@@ -46,7 +46,6 @@ public class ClientHandler implements Runnable {
             while (running && clientMessage.hasNextLine()) {
                 commandReciver(clientMessage);
             }
-
         } catch (IOException e) {
             System.err.println("ClientHandler IOException: " + e);
         } finally {
@@ -60,23 +59,26 @@ public class ClientHandler implements Runnable {
      * @param clientMessage comando inviato dal client
      */
     private void commandReciver(Scanner clientMessage) {
+        String request;
+        String command;
+        String parameter = "";
+
         if (Thread.currentThread().isInterrupted()) {
             // Gestione interruzione
             System.out.println("Thread interrotto.");
             clientPW.println("Chiusura server, sconnessione in corso");
             return;
         }
+
         // gestione comandi
-        String request = clientMessage.nextLine();
-        //System.out.printf("<Ricevuto comando \"%s\">\n", request);
-        String command;
-        String parameter = "";
+        request = clientMessage.nextLine();
         if (request.indexOf(' ') == -1) {
             command = request;
         } else {
             command = request.substring(0, request.indexOf(' '));
             parameter = request.substring(request.indexOf(' ') + 1).toLowerCase().trim();
         }
+
         switch (command) {
             case publishCommand -> publish(parameter);
             case subscribeCommand -> subscribe(parameter);
@@ -183,8 +185,13 @@ public class ClientHandler implements Runnable {
             return false;
         }
 
-        if (command.equals(sendCommand)) return true;
-        if (command.equals(listCommand)) return true;
+        if (command.equals(sendCommand)) {
+            return true;
+        }
+
+        if (command.equals(listCommand)) {
+            return true;
+        }
 
         clientPW.println("Comando inesistente");
         return false;
@@ -202,21 +209,21 @@ public class ClientHandler implements Runnable {
             } else {
                 //creo il messaggio
                 Message mess = new Message(text);
-                //controllo se il server è in fase di ispezione
-                    if (!resource.inspectedTopicIsNull()) {
-                        // Controlla se il topic in ispezione è lo stesso del topic di questo client
-                        if (resource.equalsInpectedTopic(topic)) {
-                            // Messaggio in attesa
-                            clientPW.printf("Messaggio \"%s\" in attesa. Il server è in fase d'ispezione.\n", text);
-                            Command command = new Command(sendCommand, mess, this);
-                            resource.addCommand(command);
-                            return;
-                        }
+                synchronized (resource) {
+                    //controllo se il server è in fase di ispezione
+                    // Controllo se il topic in ispezione è lo stesso del topic di questo client
+                    if (resource.equalsInpectedTopic(topic)) {
+                        // Messaggio in attesa
+                        clientPW.printf("Messaggio \"%s\" in attesa. Il server è in fase d'ispezione.\n", text);
+                        Command command = new Command(sendCommand, mess, this);
+                        resource.addCommand(command);
+                        return;
                     }
                     // Invia il messaggio a tutti i subscriber
                     sendExecute(mess);
                     clientPW.printf("Inviato messaggio \"%s\"\n", text);
                 }
+            }
 
         }
     }
@@ -228,14 +235,8 @@ public class ClientHandler implements Runnable {
      */
     public synchronized void sendExecute(Message message) {
         // Invia il messaggio a tutti i subscriber
-        HashSet<ClientHandler> chSet = topic.getSubscribers();
-        synchronized (chSet) {
-            for (ClientHandler c : topic.getSubscribers()) {
-                c.forward("Nuovo messaggio pubblicato");
-                c.forward(message.toString());
-            }
-            addMessage(message);
-        }
+        topic.forwardToAll(message);
+        addMessage(message);
     }
 
     /**
@@ -243,7 +244,7 @@ public class ClientHandler implements Runnable {
      *
      * @param text testo da inviare al PrintWriter
      */
-    private void forward(String text) {
+    public void forward(String text) {
         clientPW.println(text);
     }
 
@@ -254,15 +255,16 @@ public class ClientHandler implements Runnable {
     private void list() {
         if (isPublisherCommand(listCommand)) {
             //controllo se il server è in fase di ispezione
-            if (!resource.inspectedTopicIsNull()) {
-                // Controlla se il topic in ispezione è lo stesso del topic di questo client
+            synchronized (resource) {
+                // Controllo se sono in ispezione e se il topic in ispezione è lo stesso del topic di questo client
                 if (resource.equalsInpectedTopic(topic)) {
                     clientPW.printf("Comando \"list\" in attesa. Il server è in fase d'ispezione.\n");
                     resource.addCommand(new Command(listCommand, this));
                     return;
                 }
+
+                listExecute();
             }
-            listExecute();
         }
     }
 
@@ -284,7 +286,8 @@ public class ClientHandler implements Runnable {
                 stringBuilder.append(mess.replyString());
             }
         }
-        clientPW.println(stringBuilder);    }
+        clientPW.println(stringBuilder);
+    }
 
     /**
      * Prova ad eseguire il comando listAll se il server non è in fase
@@ -297,16 +300,16 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        if (!resource.inspectedTopicIsNull()) {
-            // Controlla se il topic in ispezione è lo stesso del topic di questo client
+        synchronized (resource) {
+            // Controllo se sono in ispezione e se il topic in ispezione è lo stesso del topic di questo client
             if (resource.equalsInpectedTopic(topic)) {
                 clientPW.printf("Comando \"listall\" in attesa. Il server è in fase d'ispezione.\n");
                 resource.addCommand(new Command(listAllCommand, this));
                 return;
             }
-        }
-        listallExecute();
 
+            listallExecute();
+        }
     }
 
     /**
@@ -355,9 +358,9 @@ public class ClientHandler implements Runnable {
      */
     private void addMessage(Message mess) {
         //Salva il messaggio
-        //synchronized (messages) {
-        messages.add(mess);
-        topic.addMessage(mess);
-        //}
+        synchronized (messages) {
+            messages.add(mess);
+            topic.addMessage(mess);
+        }
     }
 }

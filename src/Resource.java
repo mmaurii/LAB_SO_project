@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -6,12 +5,12 @@ import java.util.Objects;
 public class Resource {
     //set di tutti i topic che sono stati creati sul server
     private final HashSet<Topic> topics = new HashSet<>();
-    //elenco di tutti i client connessi a l server
+    //elenco di tutti i client connessi al server
     private final HashSet<ClientHandler> clients = new HashSet<>();
     private Topic inspectedTopic = null;
-    Objects inspectedObjectsLock = null;
+    final Object inspectedObjectsLock = new Object();
     //Buffer per i comandi in attesa durante la fase di ispezione
-    LinkedList<Command> commandsBuffer = new LinkedList<>();
+    final LinkedList<Command> commandsBuffer = new LinkedList<>();
 
     /**
      * Mostra i topic al server, se ce ne sono
@@ -49,35 +48,27 @@ public class Resource {
     }
 
     /**
-     * Elenca tutti i messaggi nel topic selezionato col comando
-     * inspect durante la fase di ispezione
+     * Ritorna una stringa per l'output contennete tutti i messaggi nel topic preso come parametro
+     * o "" se non ci sono messaggi.
+     *
+     * @param topic di cui restituire tutti i messaggi
+     *
+     * @return La stringa con tutti i messaggi del topic in ispezione se il topic è null.
+     *         Se non si è in ispezione si solleverà un NullPointerException
+     *
+     * @throws NullPointerException se non si è in fase di ispezione
      */
-    public synchronized String listAll(Topic topic) {
-        ArrayList<Message> messages;
+    public String listAll(Topic topic) {
 
-        if(topic==null){
-            if(inspectedTopic!=null){
-                messages = inspectedTopic.getMessages();
-            }else{
+        if (topic == null) {
+            if (inspectedTopic != null) {
+                return inspectedTopic.getStringMessages();
+            } else {
                 throw new NullPointerException("the parameter topic is null can only be used during the server inspection");
             }
-        }else {
-            messages = topic.getMessages();
         }
 
-        if (messages.isEmpty()) {
-            return "";
-        } else {
-            StringBuilder sb = new StringBuilder();
-
-            sb.append("Sono stati inviati "+messages.size()+" messaggi in questo topic.\n");
-            sb.append("MESSAGGI:");
-            for (Message m : messages) {
-                sb.append(m.replyString());
-            }
-
-            return sb.toString();
-        }
+        return topic.getStringMessages();
     }
 
 
@@ -96,21 +87,28 @@ public class Resource {
 
     /**
      * @return restituisce il topic che sta venendo ispezionato
+     *
+     * @throws NullPointerException se non si è in fase di ispezione
      */
-    public synchronized Topic getInspectedTopic() {
-        return inspectedTopic;
+    public String getInspectedTopicTitle() {
+        synchronized (inspectedObjectsLock) {
+            if(inspectedTopic!=null) {
+                return inspectedTopic.getTitle();
+            }else {
+                throw new NullPointerException("inspectedTopic is null this method can only be called during the server inspection");
+            }
+        }
     }
 
     /**
      * Cancella il messaggio con l'id specificato dal topic ispezionato
      *
      * @param id del messaggio che si vuole cancellare
+     *
+     * @throws NullPointerException se non si è in fase di ispezione
      */
     public String delete(int id) {
-        ArrayList<Message> messages;
-        if(inspectedTopic!=null){
-            messages = inspectedTopic.getMessages();
-        }else{
+        if (inspectedTopic == null) {
             throw new NullPointerException("inspectedTopic is null this method can only be called during the server inspection");
         }
 
@@ -120,10 +118,7 @@ public class Resource {
             }
         }
 
-        boolean removed;
-        synchronized (messages) {
-            removed = messages.removeIf(m -> m.getID() == id);
-        }
+        boolean removed = inspectedTopic.removeMessage(id);
 
         // confronto le dimensioni della lista per capire se è stato cancellato un elemento
         if (removed) {
@@ -164,9 +159,7 @@ public class Resource {
         synchronized (topics) {
             for (Topic t : topics) {
                 if (topic.equals(t)) {
-                    synchronized (t.getSubscribers()) {
-                        t.getSubscribers().add(client);
-                    }
+                    t.addSubscriber(client);
                     return t;
                 }
             }
@@ -185,21 +178,31 @@ public class Resource {
         }
     }
 
-    public synchronized void setInspectedTopic(Topic t) {
-        if (t != null){
-            this.inspectedTopic = t;
-        } else {
-            this.inspectedTopic = null;
-            executeOperation();
+    public void setInspectedTopic(Topic t) {
+        synchronized (inspectedObjectsLock) {
+            if (t != null) {
+                this.inspectedTopic = t;
+            } else {
+                this.inspectedTopic = null;
+                executeOperation();
+            }
         }
     }
 
-    public synchronized boolean inspectedTopicIsNull() {
-        return inspectedTopic == null;
+    public boolean inspectedTopicIsNull() {
+        synchronized (inspectedObjectsLock) {
+            return inspectedTopic == null;
+        }
     }
 
-    public synchronized boolean equalsInpectedTopic(Topic topic) {
-        return inspectedTopic.equals(topic);
+    public boolean equalsInpectedTopic(Topic topic) {
+        synchronized (inspectedObjectsLock) {
+            if (inspectedTopic != null) {
+                return inspectedTopic.equals(topic);
+            } else {
+                return false;
+            }
+        }
     }
 
     public String clientInterrupt() {
@@ -213,6 +216,11 @@ public class Resource {
         return sb.toString();
     }
 
+    /**
+     * Aggiunge un ClientHandler alla lista dei client connessi
+     *
+     * @param ch ClientHandler da aggiungere
+     */
     public void addClient(ClientHandler ch) {
         synchronized (clients) {
             this.clients.add(ch);
