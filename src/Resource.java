@@ -1,11 +1,12 @@
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Objects;
 
 public class Resource {
     //set di tutti i topic che sono stati creati sul server
     private final HashSet<Topic> topics = new HashSet<>();
-    //elenco di tutti i client connessi al server
+    //elenco di tutti i client connessi al server sia subscriber che publisher
     private final HashSet<ClientHandler> clients = new HashSet<>();
     private Topic inspectedTopic = null;
     final Object inspectedObjectsLock = new Object();
@@ -208,9 +209,12 @@ public class Resource {
     public String clientInterrupt() {
         StringBuilder sb = new StringBuilder();
         synchronized (clients) {
-            for (ClientHandler client : this.clients) {
-                sb.append("Interruzione client " + client + "\n");
-                client.quit();
+            Iterator<ClientHandler> it = clients.iterator();
+            while (it.hasNext()) {
+                ClientHandler ch = it.next();
+                sb.append("Interruzione client " + ch + "\n");
+                it.remove();
+                ch.quitLocal();
             }
         }
         return sb.toString();
@@ -224,6 +228,12 @@ public class Resource {
     public void addClient(ClientHandler ch) {
         synchronized (clients) {
             this.clients.add(ch);
+        }
+    }
+
+    public void removeClient(ClientHandler clientHandler) {
+        synchronized (clients){
+            this.clients.remove(clientHandler);
         }
     }
 }

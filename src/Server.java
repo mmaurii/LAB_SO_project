@@ -25,10 +25,6 @@ public class Server implements Runnable {
         socketListenerThread.start();
     }
 
-    public Resource getResource() {
-        return resource;
-    }
-
     /**
      * Mette il thread in ascolto per eventuali comandi del server
      */
@@ -55,6 +51,10 @@ public class Server implements Runnable {
                 if (parts.length == 2) inspecting(parts[0], parts[1]);
             }
         }
+    }
+
+    public Resource getResource() {
+        return resource;
     }
 
     /**
@@ -164,8 +164,7 @@ public class Server implements Runnable {
         if (listOfTopics.isEmpty()) {
             System.out.println("Non sono presenti topic");
         } else {
-            System.out.println("Topic presenti:");
-            System.out.printf("\t- %s\n", listOfTopics);
+            System.out.println(listOfTopics);
         }
     }
 
@@ -173,7 +172,7 @@ public class Server implements Runnable {
      * Elenca tutti i messaggi nel topic selezionato col comando
      * inspect durante la fase di ispezione
      */
-    public void listAll() {
+    private void listAll() {
         if (resource.inspectedTopicIsNull()) {
             System.out.println("Nessun topic in fase di ispezione.");
             return;

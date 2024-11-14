@@ -33,6 +33,7 @@ public class Receiver extends Thread {
                 }
             }
 
+            System.out.println("Il server si è disconnesso");
         } catch (IOException e) {
             System.out.println("Il server si è disconnesso");
         } finally {

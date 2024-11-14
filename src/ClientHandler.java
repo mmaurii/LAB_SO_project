@@ -44,7 +44,7 @@ public class ClientHandler implements Runnable {
 
             //controllo se c'è un comando del client da leggere
             while (running && clientMessage.hasNextLine()) {
-                commandReciver(clientMessage);
+                readCommand(clientMessage);
             }
         } catch (IOException e) {
             System.err.println("ClientHandler IOException: " + e);
@@ -58,7 +58,7 @@ public class ClientHandler implements Runnable {
      *
      * @param clientMessage comando inviato dal client
      */
-    private void commandReciver(Scanner clientMessage) {
+    private void readCommand(Scanner clientMessage) {
         String request;
         String command;
         String parameter = "";
@@ -233,7 +233,7 @@ public class ClientHandler implements Runnable {
      *
      * @param message il messaggio che viene inviato
      */
-    public synchronized void sendExecute(Message message) {
+    public void sendExecute(Message message) {
         // Invia il messaggio a tutti i subscriber
         topic.forwardToAll(message);
         addMessage(message);
@@ -272,9 +272,9 @@ public class ClientHandler implements Runnable {
      * Elenca tutti i messaggi che questo publisher ha
      * pubblicato sul topic
      */
-    public synchronized void listExecute() {
+    public void listExecute() {
         StringBuilder stringBuilder;
-        synchronized (messages) {
+        synchronized (messages) {//togliere
             if (messages.isEmpty()) {
                 clientPW.println("Non ci sono messaggi");
                 return;
@@ -315,7 +315,7 @@ public class ClientHandler implements Runnable {
     /**
      * Elenca tutti i messaggi inviati sul topic
      */
-    public synchronized void listallExecute() {
+    public void listallExecute() {
         String result = resource.listAll(topic);
 
         if (result.isEmpty()) {
@@ -328,9 +328,25 @@ public class ClientHandler implements Runnable {
     /**
      * Interrompe la connessione al server per questo client.
      */
-    public synchronized void quit() {
+    public synchronized void quitLocal() {
         running = false; //meglio usare l'interrupt?
-        clientPW.println("Terminata la connessione al server.");
+        if (topic!=null){
+            topic.removeSubscriber(this);
+        }
+        clientPW.println("Terminata la connessione al server");
+        clientPW.close();
+    }
+
+    /**
+     * Interrompe la connessione al server per questo client.
+     */
+    private void quit() {
+        running = false; //meglio usare l'interrupt?
+        if (topic!=null){
+            topic.removeSubscriber(this);
+        }
+        resource.removeClient(this);
+        clientPW.println("Terminata la connessione al server");
         clientPW.close();
     }
 
@@ -358,7 +374,7 @@ public class ClientHandler implements Runnable {
      */
     private void addMessage(Message mess) {
         //Salva il messaggio
-        synchronized (messages) {
+        synchronized (messages) {//togliere
             messages.add(mess);
             topic.addMessage(mess);
         }

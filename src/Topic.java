@@ -11,7 +11,7 @@ public class Topic {
     //lista di tutti i messaggi che sono stati scambiati su questo topic
     private final ArrayList<Message> messages = new ArrayList<>();
     final Object messagesLock = new Object();
-    //lista di tutti subscribers che hanno scelto questo topic
+    //lista di tutti i subscribers che hanno scelto questo topic
     private final HashSet<ClientHandler> subscribers = new HashSet<>();
     final Object subscribersLock = new Object();
 
@@ -54,27 +54,6 @@ public class Topic {
         }
     }
 
-    /**
-     * Controlla se due topic sono uguali in base al titolo
-     */
-    @Override
-    public synchronized boolean equals(Object obj) {
-        if (obj instanceof Topic) {
-            return ((Topic) obj).title.equals(title);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return title.hashCode();
-    }
-
-    @Override
-    public String toString(){
-        return String.format("%s: %s",title,messages);
-    }
-
     public boolean removeMessage(int id) {
         synchronized (messagesLock) {
             return messages.removeIf(m -> m.getID() == id);
@@ -95,4 +74,32 @@ public class Topic {
             }
         }
     }
+
+    public void removeSubscriber(ClientHandler clientHandler) {
+        synchronized (subscribersLock) {
+            subscribers.remove(clientHandler);
+        }
+    }
+
+    /**
+     * Controlla se due topic sono uguali in base al titolo
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Topic) {
+            return ((Topic) obj).title.equals(title);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return title.hashCode();
+    }
+
+    @Override
+    public String toString(){
+        return String.format("%s: %s",title,messages);
+    }
+
 }

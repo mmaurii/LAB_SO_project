@@ -44,7 +44,7 @@ public class Sender extends Thread {
                 //controllo se il server si è disconnesso
                 if (Thread.interrupted()) {
                     to.println(quitCommand);
-                    System.out.println("Il server si è disconnesso");
+                    //System.out.println("Il server si è disconnesso");
                     break;
                 }
             }
