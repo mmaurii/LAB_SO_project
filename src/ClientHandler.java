@@ -49,6 +49,8 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.err.println("ClientHandler IOException: " + e);
         } finally {
+            // elimina il ClientHandler quando il client viene arrestato inaspettatamente
+            resource.removeClient(this);
             closeSocket();
         }
     }

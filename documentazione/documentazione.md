@@ -14,22 +14,22 @@ Il server stesso offre un'interfaccia a linea di comando che permette a un utent
 
 ### Idea alla base: 
 Abbiamo inizialmente diviso client e server ed elencato le possibili classi utili per la strutturazione del programma come: Topic, Messaggio, Comando. Riflettendo sulle differenze tra Subscriber e Publisher pensavamo inizialmente di fare due classi separate, queste avrebbero ereditato alcuni campi e metodi da una superclasse Client. Abbiamo poi deciso di fare solo una classe generale Client per non complicare la fase di instauramento della comunicazione. Quindi abbiamo proceduto a strutturare meglio client e server, che abbiamo suddiviso nelle seguenti classi:
-- Client, Sender, Reciver
+- Client, Sender, Receiver
 - MainServer, Server, SocketListener, ClientHandler
 
 Per farlo siamo partiti dal codice fornitoci dal Tutor in quanto ci sembrava già valido e strutturato. Abbiamo scelto di mantenere separato le diverse classi a cui è stato assegnato un compito ben preciso in modo tale da agevolarne la manutenzione e la scrittura.
 
-- Client -> si preoccupa di istanziare una socket, connettersi al servere e di gestire i thread relativi al Sender e al Reciver.
+- Client -> si preoccupa di istanziare una socket, connettersi al server e di gestire i thread relativi al Sender e al Receiver.
 - Sender -> prende in input da console messaggi e comandi e li invia al server.
-- Reciver -> sta in ascolto sulla socket e attende che arrivino messaggi per presentarli poi a console.
+- Receiver -> sta in ascolto sulla socket e attende che arrivino messaggi per presentarli poi a console.
 - MainServer -> prende in input le informazioni necessarie a instanziare una nuova socket e avvia un nuovo Server sulla socket specificata mettendosi poi in attesa che termini.
-- Server ->  si occupa di fornire un interfaccia console con cui interfacciarsi al server. Inoltre mette a disposizione le proprie risorse in maniera sicura e istanzia un thread SocketListener.
+- Server -> si occupa di fornire un interfaccia console con cui interfacciarsi al server. Inoltre mette a disposizione le proprie risorse in maniera sicura e istanzia un thread SocketListener.
 - SocketListener -> si mette in ascolto su una socket per eventuali nuovi collegamenti da parte di un client. Una volta stabilita la connessione questa viene lasciata in gestione alla classe ClientHandler
 - ClientHandler -> gestisce la comunicazione con uno specifico client garantendo in questo modo una corretta e sicura interazione con le risorse della classe Server.
 
 ### Funzionamento Componenti Principali
 #### CLIENT
-La classe Client delega Il Sender e il Reciver a gestire la comunicazione con il server. Il Sender si preoccupa di ottenere i messaggi dall'utente e di inviarli al server, e il Reciver di ottenere i messaggi dal server e di preseentarli all'utente. 
+La classe Client delega Il Sender e il Receiver a gestire la comunicazione con il server. Il Sender si preoccupa di ottenere i messaggi dall'utente e di inviarli al server, e il Receiver di ottenere i messaggi dal server e di presentarli all'utente. 
 #### SERVER
 La classe Server si preoccupa di fornire un interfaccia, tramite i suoi metodi, per accedere alle sue risorse e di prendere in input i comandi tramite la console. Il Server inoltre delega un SocketListener che si metterà in ascolto per eventuali nuove connessioni da parte di alcuni client, stabilita la comunicazione relativa a un client ne passa il controllo a un ClientHandler. Il ClientHandler si preoccuperà di interfacciarsi con la socket e quindi di inviare e ricevere comandi e messaggi da un client specifico. Esaudendo poi le sue richieste tramite i metodi che la classe Server gli fornisce.
 
@@ -63,7 +63,7 @@ Vengono fatti dei controlli per assicurarsi che i comandi esclusivi ai Publisher
 ### Client
 #### Overview
 Un client viene avviato fornendogli un host e una porta, che formano la socket che usa per connettersi al server. Il client usa le classi Sender e Receiver per inviare e ricevere messaggi al server rispettivamente (tramite il ClientHandler).   
-Le funzioni di invio e di ricezione di queste ultime avviene su due thread indipendenti affinche un client possa ricevere e inviare dati contemporaneamente.
+Le funzioni di invio e di ricezione di queste ultime avviene su due thread indipendenti affinché un client possa ricevere e inviare dati contemporaneamente.
 #### Arresto client
 La socket del client viene chiusa solamente dopo che i thread del sender e del reciever terminano.
 
@@ -113,13 +113,13 @@ Quando il server è in fase di ispezione e un client prova a inviare un comando 
 - relazione
 
 ## Problemi e ostacoli
-parla di ideamento e sviluppo dell'aplicazione. Idee e scelte fatte/alternative
+parla di ideamento e sviluppo dell'applicazione. Idee e scelte fatte/alternative
 
 ### Scanner bloccante
 Inizialmente in alcune classi veniva utilizzato uno scanner per leggerei messaggi da tastiera e questo era per noi un problema in quanto quest'ultimo è bloccante. Il problema si manifestava col non riuscire a chiudere un thread senza l'interazione con l'utente che lo stava utilizzando e con la sovrapposizione di comandi diversi in console.
 
 ### Strutture dati da utilizzare e relativa gestione degli accessi e della sincronizzazione
-Ci siamo posti il quesito: "Quali strutture dati è più corretto utilizzare? e come?". Abbiamo valutato se utilizzare strutture dati sincrone, che abbiamo deciso di scartare per spenderci più in prima persona nella sincronizzazione del progetto. Riflettendo su come memorizzare i dati abbiamo deciso di mantenere più strutture rendendo più veloce la lettura dei dati a discapito dell'eliminazione. In sostanza la classe Server mantiene tutti i dati:
+Ci siamo posti il quesito: "Quali strutture dati è più corretto utilizzare? E come?". Abbiamo valutato se utilizzare strutture dati sincrone, che abbiamo deciso di scartare per spenderci più in prima persona nella sincronizzazione del progetto. Riflettendo su come memorizzare i dati abbiamo deciso di mantenere più strutture rendendo più veloce la lettura dei dati a discapito dell'eliminazione. In sostanza la classe Server mantiene tutti i dati:
 - HashSet<Topic> topics -> lista di tutti i topic
   Ogni Topic ha una lista di messaggi un titolo e una lista di client iscritti a quel topic
 
@@ -130,8 +130,8 @@ Ci siamo posti il quesito: "Quali strutture dati è più corretto utilizzare? e 
 - LinkedList<Command> commandsBuffer -> lista di tutti i comandi in sospeso
 
 ### Modalità di gestione della sincronizzazione
-- La sincronizzazione è stata gestita in prevalenza con metodi synchronyzed o blocchi synchronyzed, abbiamo valutato se interpellare metodi wait, notify, semafori o altro ma ci è sembrato inutile oltreche complesso. 
-- Il meccanismo dei comandi sospesi viene implementato acquisendo il lock sul server e switchando la variabile booleana inspectedLock. In questo modo è semppre posssibile sapere se si è in una fase di ispezione o no. L'accesso alle strutture dati o a variabili condivise avviene sempre tramite il costrutto synchronized, ed in modo tale da ottenere sempre un lock il più specifico possibile e il più breve possibile .In questo modo non si tiene bloccata una risorsa che potrebbe servire ad alti thread. 
+- La sincronizzazione è stata gestita in prevalenza con metodi synchronized o blocchi synchronized, abbiamo valutato se interpellare metodi wait, notify, semafori o altro ma ci è sembrato inutile oltre che complesso. 
+- Il meccanismo dei comandi sospesi viene implementato acquisendo il lock sul server e switchando la variabile booleana inspectedLock. In questo modo è sempre possibile sapere se si è in una fase di ispezione o no. L'accesso alle strutture dati o a variabili condivise avviene sempre tramite il costrutto synchronized, e in modo tale da ottenere sempre un lock il più specifico possibile e il più breve possibile .In questo modo non si tiene bloccata una risorsa che potrebbe servire ad alti thread. 
 ecc ecc
 
 ### Instaurazione gestione e chiusura della comunicazione
@@ -147,7 +147,7 @@ comandi e screenshot vari
 
 
 ## Esempi di esecuzione e output
-`@` indica chi sta eseguendo il comando, `>` indica il testo inviato e `<` indica il testo ricevuto. Per motivi di chiarezza non sono stati inlcusi i prompt del server `> Inserisci comando` e `> Inserisci comando (ispezionando topic "<topic>")`.  
+`@` indica chi sta eseguendo il comando, `>` indica il testo inviato e `<` indica il testo ricevuto. Per motivi di chiarezza non sono stati inclusi i prompt del server `> Inserisci comando` e `> Inserisci comando (ispezionando topic "<topic>")`.  
 Registrazione di client come publisher
 ```
 @ Client
@@ -185,13 +185,14 @@ Elenco di messaggi inviati sul topic
 @ Server
 > listall
 < Sono stati inviati 1 messaggi in questo topic.
+  Messaggi:
 	- ID: 1
 	  Testo: carbonara
 	  Data: 26/10/2024 - 11:56:45
 ```
 Client invia un comando quando il server è in fase di ispezione
 ```
-@ Client(publishber)
+@ Client(publisher)
 > send carbonara 
 < Messaggio "carbonara" in attesa. Il server è in fase d'ispezione.
 ```
@@ -207,13 +208,14 @@ Fine ispezione topic
 > end 
 < Fine ispezione del topic cibo.
 ```
-Ricezione messaggi con contenuto uguale durante fase di ispezione
+Ricezione messaggi con contenuto uguale e ricezione messaggi terminata la precedente fase di ispezione
 ```
 @ Server
 > inspect cibo
 < Ispezionando il topic: cibo
 > listall
 < Sono stati inviati 2 messaggi in questo topic.
+  Messaggi:
 	- ID: 1
 	  Testo: carbonara
 	  Data: 26/10/2024 - 11:56:45
@@ -259,7 +261,7 @@ Elenco dei messaggi sul topic a cui il client è iscritto
 > listall 
 < Messaggi:
 	- ID: 1
-    Testo: carbonara
+      Testo: carbonara
 	  Data: 26/10/2024 - 12:26:21
 ```
 Invio messaggio su un topic al quale il subscriber è iscritto
@@ -278,4 +280,13 @@ Arresto client e scollegamento dal server
 @ Client(publisher)
 > quit
 < Terminata la connessione al server.
+```
+Arresto Server e scollegamento dei client da esso
+```
+@ Server
+> quit
+< Interruzione dei client connessi:
+  Interruzione client ClientHandler@72e856ca
+  
+  Server arrestato.
 ```

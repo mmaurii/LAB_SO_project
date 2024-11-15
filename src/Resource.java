@@ -49,7 +49,7 @@ public class Resource {
     }
 
     /**
-     * Ritorna una stringa per l'output contennete tutti i messaggi nel topic preso come parametro
+     * Ritorna una stringa per l'output contenente tutti i messaggi nel topic preso come parametro
      * o "" se non ci sono messaggi.
      *
      * @param topic di cui restituire tutti i messaggi
