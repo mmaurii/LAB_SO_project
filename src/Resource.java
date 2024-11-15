@@ -53,10 +53,8 @@ public class Resource {
      * o "" se non ci sono messaggi.
      *
      * @param topic di cui restituire tutti i messaggi
-     *
      * @return La stringa con tutti i messaggi del topic in ispezione se il topic è null.
-     *         Se non si è in ispezione si solleverà un NullPointerException
-     *
+     * Se non si è in ispezione si solleverà un NullPointerException
      * @throws NullPointerException se non si è in fase di ispezione
      */
     public String listAll(Topic topic) {
@@ -88,14 +86,13 @@ public class Resource {
 
     /**
      * @return restituisce il topic che sta venendo ispezionato
-     *
      * @throws NullPointerException se non si è in fase di ispezione
      */
     public String getInspectedTopicTitle() {
         synchronized (inspectedObjectsLock) {
-            if(inspectedTopic!=null) {
+            if (inspectedTopic != null) {
                 return inspectedTopic.getTitle();
-            }else {
+            } else {
                 throw new NullPointerException("inspectedTopic is null this method can only be called during the server inspection");
             }
         }
@@ -105,7 +102,6 @@ public class Resource {
      * Cancella il messaggio con l'id specificato dal topic ispezionato
      *
      * @param id del messaggio che si vuole cancellare
-     *
      * @throws NullPointerException se non si è in fase di ispezione
      */
     public String delete(int id) {
@@ -206,18 +202,17 @@ public class Resource {
         }
     }
 
-    public String clientInterrupt() {
-        StringBuilder sb = new StringBuilder();
+    public void removeAllClients() {
         synchronized (clients) {
-            Iterator<ClientHandler> it = clients.iterator();
-            while (it.hasNext()) {
-                ClientHandler ch = it.next();
-                sb.append("Interruzione client " + ch + "\n");
-                it.remove();
-                ch.quitLocal();
+            Iterator<ClientHandler> iter = clients.iterator();
+            while (iter.hasNext()) {
+                ClientHandler ch = iter.next();
+                ch.quit();
+                ch.forward("quit");
+                System.out.println("Interruzione client " + ch);
+                iter.remove();
             }
         }
-        return sb.toString();
     }
 
     /**
@@ -232,7 +227,7 @@ public class Resource {
     }
 
     public void removeClient(ClientHandler clientHandler) {
-        synchronized (clients){
+        synchronized (clients) {
             this.clients.remove(clientHandler);
         }
     }

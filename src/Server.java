@@ -6,7 +6,8 @@ import java.util.*;
  * durante l'inizializzazione un thread SocketListener.
  */
 public class Server implements Runnable {
-    private Boolean running = true;
+    private boolean running = true;
+    private final Object runningLock = new Object();
     private final SocketListener socketListener;
     private final Resource resource;
 
@@ -17,11 +18,12 @@ public class Server implements Runnable {
     private final String endCommand = "end";
     private final String inspectCommand = "inspect";
     private final String showCommand = "show";
+    Thread socketListenerThread;
 
     public Server(int portNumber) {
         this.resource = new Resource();
         this.socketListener = new SocketListener(this, portNumber);
-        Thread socketListenerThread = new Thread(socketListener);
+        this.socketListenerThread = new Thread(socketListener);
         socketListenerThread.start();
     }
 
@@ -31,7 +33,7 @@ public class Server implements Runnable {
     @Override
     public void run() {
         Scanner input = new Scanner(System.in);
-        while (running) {
+        while (isRunning()) {
             if (resource.inspectedTopicIsNull()){
                 System.out.println("\n> Inserisci comando");
             } else{
@@ -51,6 +53,12 @@ public class Server implements Runnable {
                 if (parts.length == 2) inspecting(parts[0], parts[1]);
             }
         }
+
+//        try {
+//            socketListenerThread.join();
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
     public Resource getResource() {
@@ -91,14 +99,12 @@ public class Server implements Runnable {
      * Chiude tutte le connessioni coi client e arresta il server
      */
     private void quit() {
-        synchronized (running) {
+        synchronized (runningLock) {
             running = false;
         }
 
         System.out.println("Interruzione dei client connessi:");
-        String quitMessage = resource.clientInterrupt();
-        System.out.println(quitMessage);
-
+        resource.removeAllClients();
         socketListener.close();
     }
 
@@ -201,7 +207,7 @@ public class Server implements Runnable {
      * @return true se il server è in esecuzione, false altrimenti
      */
     public boolean isRunning() {
-        synchronized (running) {
+        synchronized (runningLock) {
             return running;
         }
     }

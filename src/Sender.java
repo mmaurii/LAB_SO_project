@@ -23,18 +23,18 @@ public class Sender extends Thread {
         BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
         try {
             PrintWriter to = new PrintWriter(this.s.getOutputStream(), true);
-            while (true) {
+            while (!Thread.interrupted()) {
                 if (bf.ready()) {
                     String request = bf.readLine();
                     /*
                      * se il thread è stato interrotto mentre leggevamo l'input da tastiera, inviamo
                      * "quit" al server e usciamo
                      */
-                    if (Thread.interrupted()) {
-                        to.println(quitCommand);
-                        break;
-                    }
-                    // in caso contrario proseguiamo e analizziamo l'input inserito
+//                    if (Thread.interrupted()) {
+//                        //to.println(quitCommand);
+//                        break;
+//                    }
+                    // in caso contrario proseguiamo e spediamo l'input inserito
                     to.println(request);
                     if (request.equals(quitCommand)) {
                         break;
@@ -42,11 +42,11 @@ public class Sender extends Thread {
                 }
 
                 //controllo se il server si è disconnesso
-                if (Thread.interrupted()) {
-                    to.println(quitCommand);
-                    //System.out.println("Il server si è disconnesso");
-                    break;
-                }
+//                if (Thread.interrupted()) {
+////                    to.println(quitCommand);
+////                    System.out.println("Il server si è disconnesso");
+//                    break;
+//                }
             }
         } catch (IOException e) {
             System.err.println("IOException caught: " + e);

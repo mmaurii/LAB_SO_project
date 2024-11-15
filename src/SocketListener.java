@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.LinkedList;
 
 /**
  * La classe SocketListener permette di mettersi in ascolto su una socket per eventuali
@@ -12,6 +13,7 @@ import java.net.SocketException;
 public class SocketListener implements Runnable {
     private final Server server;
     private final ServerSocket serverSocket;
+    private final LinkedList<Thread> children = new LinkedList<>();
 
     public SocketListener(Server server, int port) {
         this.server = server;
@@ -36,7 +38,9 @@ public class SocketListener implements Runnable {
                     if (!Thread.interrupted()) {
                         // crea un nuovo thread che gestisca la comunicazione istanziata
                         ClientHandler ch = new ClientHandler(clientSocket, server);
-                        new Thread(ch).start();
+                        Thread t = new Thread(ch);
+                        children.add(t);
+                        t.start();
                         server.addClient(ch);
                     } else {
                         serverSocket.close();
@@ -62,8 +66,11 @@ public class SocketListener implements Runnable {
      */
     public void close() {
         try {
+            for (Thread t : children){
+                t.join();
+            }
             serverSocket.close();
-        } catch (IOException e) {
+        }  catch (InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }
     }

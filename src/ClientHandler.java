@@ -1,6 +1,10 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.*;
 
 /**
@@ -16,7 +20,8 @@ public class ClientHandler implements Runnable {
     //elenco di tutti i messaggi inviati da questo topic
     private final ArrayList<Message> messages;
     private PrintWriter clientPW;
-    private volatile boolean running = true;
+    private boolean running = true;
+    private final Object runningLock = new Object();
 
     //definizione nomi comandi
     private final String sendCommand = "send";
@@ -39,57 +44,57 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            Scanner clientMessage = new Scanner(socket.getInputStream());
+            BufferedReader clientMessage = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             clientPW = new PrintWriter(socket.getOutputStream(), true);
+            String request;
 
             //controllo se c'è un comando del client da leggere
-            while (running && clientMessage.hasNextLine()) {
-                readCommand(clientMessage);
+            while (isRunning() && (request = clientMessage.readLine()) != null) {
+                String command;
+                String parameter = "";
+
+                if (Thread.currentThread().isInterrupted()) {
+                    // Gestione interruzione
+                    System.out.println("Thread interrotto.");
+                    clientPW.println("Chiusura server, sconnessione in corso");
+                    return;
+                }
+
+                // gestione comandi
+                if (request.indexOf(' ') == -1) {
+                    command = request;
+                } else {
+                    command = request.substring(0, request.indexOf(' '));
+                    parameter = request.substring(request.indexOf(' ') + 1).toLowerCase().trim();
+                }
+
+                switch (command) {
+                    case publishCommand -> publish(parameter);
+                    case subscribeCommand -> subscribe(parameter);
+                    case showCommand -> show();
+                    case quitCommand -> {
+                        quit();
+                        System.out.println("Interruzione client "+this);}
+                    case sendCommand -> send(parameter);
+                    case listCommand -> list();
+                    case listAllCommand -> listAll();
+                    default -> clientPW.printf("Comando non riconosciuto: %s\n", command);
+                }
             }
+            clientPW.close();
+            clientMessage.close();
+        } catch (SocketException se) {
+            System.err.println("ClientHandler SocketException: " + se);
+            System.out.println("Il client "+this+" si è impropriamente disconnesso");
+            System.err.println("Rilascio tutte le risorse associate al client...");
+            quit();
         } catch (IOException e) {
             System.err.println("ClientHandler IOException: " + e);
         } finally {
-            // elimina il ClientHandler quando il client viene arrestato inaspettatamente
-            resource.removeClient(this);
-            closeSocket();
-        }
-    }
-
-    /**
-     * Ciclo principale per gestire la ricezione di comandi del client.
-     *
-     * @param clientMessage comando inviato dal client
-     */
-    private void readCommand(Scanner clientMessage) {
-        String request;
-        String command;
-        String parameter = "";
-
-        if (Thread.currentThread().isInterrupted()) {
-            // Gestione interruzione
-            System.out.println("Thread interrotto.");
-            clientPW.println("Chiusura server, sconnessione in corso");
-            return;
-        }
-
-        // gestione comandi
-        request = clientMessage.nextLine();
-        if (request.indexOf(' ') == -1) {
-            command = request;
-        } else {
-            command = request.substring(0, request.indexOf(' '));
-            parameter = request.substring(request.indexOf(' ') + 1).toLowerCase().trim();
-        }
-
-        switch (command) {
-            case publishCommand -> publish(parameter);
-            case subscribeCommand -> subscribe(parameter);
-            case showCommand -> show();
-            case quitCommand -> quit();
-            case sendCommand -> send(parameter);
-            case listCommand -> list();
-            case listAllCommand -> listAll();
-            default -> clientPW.printf("Comando non riconosciuto: %s\n", command);
+            releaseResources();
+            if (!socket.isClosed()) {
+                closeSocket();
+            }
         }
     }
 
@@ -100,7 +105,6 @@ public class ClientHandler implements Runnable {
         if (socket != null && !socket.isClosed()) {
             try {
                 socket.close();
-                System.out.println("Connessione terminata per il thread " + Thread.currentThread());
             } catch (IOException e) {
                 System.err.println("Errore di chiusura socket: " + e.getMessage());
             }
@@ -331,25 +335,38 @@ public class ClientHandler implements Runnable {
      * Interrompe la connessione al server per questo client.
      */
     public synchronized void quitLocal() {
-        running = false; //meglio usare l'interrupt?
-        if (topic!=null){
+        synchronized (runningLock) {
+            running = false; //meglio usare l'interrupt?
+        }
+        if (topic != null) {
             topic.removeSubscriber(this);
         }
         clientPW.println("Terminata la connessione al server");
-        clientPW.close();
+        clientPW.println(quitCommand);
+        System.out.println("Interruzione client "+this);
     }
 
     /**
      * Interrompe la connessione al server per questo client.
      */
-    private void quit() {
-        running = false; //meglio usare l'interrupt?
-        if (topic!=null){
+    public synchronized void quit() {
+        synchronized (runningLock) {
+            running = false;
+        }
+        clientPW.println("Terminata la connessione al server");
+    }
+
+    private void releaseResources() {
+        if (topic != null) {
             topic.removeSubscriber(this);
         }
         resource.removeClient(this);
-        clientPW.println("Terminata la connessione al server");
-        clientPW.close();
+    }
+
+    private Boolean isRunning() {
+        synchronized (runningLock) {
+            return running;
+        }
     }
 
     /**
@@ -358,7 +375,7 @@ public class ClientHandler implements Runnable {
      * @param id id del messaggio da cancellare
      * @param t  topic dove si trova il messaggio da cancellare
      */
-    public void delMessage(Topic t, int id) {           //synchronized
+    public void delMessage(Topic t, int id) {
         //synchronized (messages) {//inutile
         // l'operazione non viene eseguita se il topic passato come parametro
         // è diverso da quello del client
