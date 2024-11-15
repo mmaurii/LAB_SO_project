@@ -13,7 +13,7 @@ Il server stesso offre un'interfaccia a linea di comando che permette a un utent
 ![classi.svg](classi.svg)
 
 ### Idea alla base: 
-Abbiamo inizialmente diviso client e server ed elencato le possibili classi utili per la strutturazione del programma come: Topic, Messaggio, Comando. Riflettendo sulle differenze tra Subscriber e Publisher pensavamo inizialmente di fare due classi separate, queste avrebbero ereditato alcuni campi e metodi da una superclasse Client. Abbiamo poi deciso di fare solo una classe generale Client per non complicare la fase di instauramento della comunicazione. Quindi abbiamo proceduto a strutturare meglio client e server, che abbiamo suddiviso nelle seguenti classi:
+Abbiamo inizialmente diviso client e server ed elencato le possibili classi utili per la strutturazione del programma come: Topic, Messaggio, Comando. Riflettendo sulle differenze tra Subscriber e Publisher pensavamo inizialmente di fare due classi separate, queste avrebbero ereditato alcuni campi e metodi da una superclasse Client. Abbiamo poi deciso di fare solo una classe generale Client per non complicare la fase di stabilimento della comunicazione. Quindi abbiamo proceduto a strutturare meglio client e server, che abbiamo suddiviso nelle seguenti classi:
 - Client, Sender, Receiver
 - MainServer, Server, SocketListener, ClientHandler
 
@@ -41,7 +41,7 @@ La classe server ha una ServerSocket che permette ai client di connettersi a ess
 #### Invio comandi
 Il main thread della classe server usa uno Scanner per ricevere comandi da tastiera. Dopo aver fatto il parsing del comando viene controllato l'`inspectedTopic` del server. Se è `null`, il server accetta solo i comandi quit, show e inspect. Se invece sta ispezionando un topic potranno essere eseguiti solo i comandi listall, end e delete. 
 #### Connessione client
-Dato che il server implementa la classe `Runnable`, può eseguire un altro thread al suo interno, che usa la `serverSocket` per connettere i client a esso. I client connessi sono memorizzati nel server in una lista di ClientHandler. Quando viene inviato il comando quit, oltre che chiudere la socket del server, si "forzano" tutti i ClientHander a inviare il comando quit per scollegarli dal server prima che questo venga chiuso.
+Dato che il server implementa la classe `Runnable`, può eseguire un altro thread al suo interno, che usa la `serverSocket` per connettere i client a esso. I client connessi sono memorizzati nel server in una lista di ClientHandler. Quando viene inviato il comando quit, oltre che chiudere la socket del server, si "forzano" tutti i ClientHandler a inviare il comando quit per scollegarli dal server prima che questo venga chiuso.
 #### Gestione concorrenza
 
 ### SocketListener
@@ -106,7 +106,7 @@ Quando il server è in fase di ispezione e un client prova a inviare un comando 
 - Logiche di comunicazione del paradigma client - server
 - relazione
 ### Amadori
-- Classi: Client, Sender, Reciever e Topic
+- Classi: Client, Sender, Receiver e Topic
 - Logiche di comunicazione del paradigma client - server
 - logiche di gestione dei dati e delle risorse
 - sincronizzazione
@@ -124,7 +124,7 @@ Ci siamo posti il quesito: "Quali strutture dati è più corretto utilizzare? E 
   Ogni Topic ha una lista di messaggi un titolo e una lista di client iscritti a quel topic
 
 - HashSet<ClientHandler> clients -> lista di tutti i client collegati
-  Ogni ClientHandler ha una sua lista di messaggi che il client ha inviato, il topic su cui i messaggi sono stati inviati e un flag per identificre se quel client è un publisher o un subscriber. Oltre che a un 
+  Ogni ClientHandler ha una sua lista di messaggi che il client ha inviato, il topic su cui i messaggi sono stati inviati e un flag per identificare se quel client è un publisher o un subscriber. Oltre che a un 
   riferimento al Server per eventuali ulteriori risorse
 
 - LinkedList<Command> commandsBuffer -> lista di tutti i comandi in sospeso
