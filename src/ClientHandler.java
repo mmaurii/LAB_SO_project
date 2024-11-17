@@ -398,4 +398,8 @@ public class ClientHandler implements Runnable {
             topic.addMessage(mess);
         }
     }
+
+    public void notifyClient(String message) {
+        clientPW.println(message);
+    }
 }

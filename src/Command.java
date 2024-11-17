@@ -27,7 +27,14 @@ public class Command {
         switch (command) {
             case "list" -> sender.listExecute();
             case "listall" -> sender.listallExecute();
-            case "send" -> sender.sendExecute(message);
+            case "send" -> {
+                sender.sendExecute(message);
+
+                sender.notifyClient("Il tuo messaggio \"" + message.getTesto() +  "\" è stato inviato");
+            }
         }
     }
+
+   
+    
 }

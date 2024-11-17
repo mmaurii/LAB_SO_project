@@ -27,6 +27,10 @@ public class Message {
         return id;
     }
 
+    public String getTesto() {
+        return text;
+    }
+
     @Override
     public String toString() {
         return "ID: " + id + "\nTesto: " + text + "\nData: " +
