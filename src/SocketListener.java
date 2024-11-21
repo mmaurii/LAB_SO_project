@@ -39,6 +39,7 @@ public class SocketListener implements Runnable {
                         // crea un nuovo thread che gestisca la comunicazione istanziata
                         ClientHandler ch = new ClientHandler(clientSocket, server);
                         Thread t = new Thread(ch);
+                        t.setName("ClientHandler");
                         children.add(t);
                         t.start();
                         server.addClient(ch);

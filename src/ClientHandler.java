@@ -8,7 +8,7 @@ import java.util.*;
 
 /**
  * La classe ClientHandler gestisce la comunicazione con uno specifico client garantendo in questo modo
- * una corretta e sicura interazione con le risorse della classe Server.
+ * una corretta e sicura interazione con le risorse della classe Resource.
  */
 public class ClientHandler implements Runnable {
     private final Socket socket;
@@ -38,7 +38,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Loop principale per la comunicazione tra client (tramite sender e receiver) e server
+     * Loop principale per la comunicazione tra client e server
      */
     @Override
     public void run() {
@@ -47,7 +47,7 @@ public class ClientHandler implements Runnable {
             clientPW = new PrintWriter(socket.getOutputStream(), true);
             String request;
 
-            //controllo se c'è un comando del client da leggere
+            //controllo se c'è un comando del client da leggere e che la comunicazione non sia stata interrotta
             while (isRunning() && (request = clientMessage.readLine()) != null) {
                 String command;
                 String parameter = "";
@@ -59,7 +59,7 @@ public class ClientHandler implements Runnable {
                     return;
                 }
 
-                // gestione comandi
+                //elaborazione input
                 if (request.indexOf(' ') == -1) {
                     command = request;
                 } else {
@@ -67,6 +67,7 @@ public class ClientHandler implements Runnable {
                     parameter = request.substring(request.indexOf(' ') + 1).toLowerCase().trim();
                 }
 
+                // gestione comandi
                 switch (command) {
                     case publishCommand -> publish(parameter);
                     case subscribeCommand -> subscribe(parameter);
@@ -88,6 +89,7 @@ public class ClientHandler implements Runnable {
             clientPW.close();
             clientMessage.close();
         } catch (SocketException se) {
+            //controllo se l'errore si è verificato perchè la comunicazione è stata interrotta da un comando quit
             if (isRunning()) {
                 System.err.println("ClientHandler SocketException: " + se);
                 System.out.println("Il client " + this + " si è impropriamente disconnesso");
@@ -98,9 +100,9 @@ public class ClientHandler implements Runnable {
             System.err.println("ClientHandler IOException: " + e);
         } finally {
             releaseResources();
-            if (!socket.isClosed()) {
-                closeSocket();
-            }
+//            if (!socket.isClosed()) {
+//                closeSocket();
+//            }
         }
     }
 
@@ -119,9 +121,9 @@ public class ClientHandler implements Runnable {
 
 
     /**
-     * Registra il client come publisher
+     * Registra il client associato come publisher
      *
-     * @param parameter topic che si vuole pubblicare
+     * @param parameter stringa contenente il nome del topic su cui si vuole scrivere
      */
     private void publish(String parameter) {
         if (publishORSubscribe != null) {
@@ -135,17 +137,17 @@ public class ClientHandler implements Runnable {
         }
 
         clientPW.printf("Registrato come publisher al topic %s\n", parameter);
+        // false = publisher, true = subscriber
         publishORSubscribe = false;
         this.topic = resource.addTopic(new Topic(parameter));
     }
 
     /**
-     * Registra il client come subscriber
+     * Registra il client associato come subscriber
      *
-     * @param parameter topic a cui ci si vuole iscrivere
+     * @param parameter stringa contenente il nome del topic a cui ci si vuole iscrivere
      */
     private void subscribe(String parameter) {
-        // false = publisher, true = subscriber
         if (publishORSubscribe != null) {
             clientPW.println("Non puoi più eseguire questo comando");
             return;
@@ -163,11 +165,14 @@ public class ClientHandler implements Runnable {
             return;
         }
         clientPW.printf("Registrato come subscriber al topic %s\n", parameter);
+        // false = publisher, true = subscriber
         publishORSubscribe = true;
     }
 
     /**
-     * elenca i topic presenti
+     * elenca i topic presenti sul server, parameter deve essere vuoto perchè il metodo vada a buon fine
+     *
+     * @param parameter stringa contenente eventuali parametri ricevuti col comando show
      */
     private void show(String parameter) {
         if (!Objects.equals(parameter, "")) {
@@ -184,12 +189,12 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Controlla se un comando è eseguibile solo dai publisher
+     * Controlla se un comando è eseguibile dai publisher
      *
-     * @param command comando sui fare il controllo
-     * @return true se il comando è eseguibile solo dal publisher
+     * @param command stringa contente il nome del comando su cui fare il controllo
+     * @return true se il comando è eseguibile dai publisher, false alrimenti
      */
-    private boolean isPublisherCommand(String command) {
+    private boolean isPublisherOrSubscribeCommand(String command) {
         // false = publisher, true = subscriber
         if (publishORSubscribe == null) {
             clientPW.println("Devi essere registrato come publisher o subscriber per inviare questo comando");
@@ -214,12 +219,13 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Pubblica un messaggio sul topic del publisher
+     * Pubblica un messaggio corrispondente a "text" sul topic del publisher,
+     * se il server è in fase di ispezione mette il comando in coda per essere eseguito al termine dell'ispezione
      *
-     * @param text messaggio da inviare
+     * @param text stringa contenente il messaggio da inviare
      */
     private void send(String text) {
-        if (isPublisherCommand(sendCommand)) {
+        if (isPublisherOrSubscribeCommand(sendCommand)) {
             if (text.isEmpty()) {
                 clientPW.println("Non puoi inviare un messaggio vuoto");
             } else {
@@ -240,14 +246,13 @@ public class ClientHandler implements Runnable {
                     clientPW.printf("Inviato messaggio \"%s\"\n", text);
                 }
             }
-
         }
     }
 
     /**
-     * Invia un messaggio a tutti i publisher iscritti al topic
+     * Invia un messaggio a tutti i subscriber iscritti al topic a cui appartiene questo publisher
      *
-     * @param message il messaggio che viene inviato
+     * @param message messaggio da inviare
      */
     public void sendExecute(Message message) {
         // Invia il messaggio a tutti i subscriber
@@ -256,17 +261,21 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Invia una stringa al PrintWriter del ClientHandler
+     * Invia una stringa al client associato al ClientHandler
      *
-     * @param text testo da inviare al PrintWriter
+     * @param text stringa contennete il testo da inviare al client
      */
     public synchronized void forward(String text) {
         clientPW.println(text);
     }
 
     /**
-     * Prova a eseguire il comando list se il server non è
-     * in fase di ispezione
+     * Manda un elenco di tutti i messaggi, che il publisher associato a questo ClientHandler
+     * ha inviato su questo topic, al publier che li ha inviati.
+     * Se il server è in fase di ispezione mette il comando in coda per essere eseguito al termine dell'ispezione.
+     * parameter deve essere vuoto perchè il metodo vada a buon fine
+     *
+     * @param parameter stringa contenente eventuali parametri ricevuti col comando list
      */
     private void list(String parameter) {
         if (!Objects.equals(parameter, "")) {
@@ -274,8 +283,7 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        if (isPublisherCommand(listCommand)) {
-            //controllo se il server è in fase di ispezione
+        if (isPublisherOrSubscribeCommand(listCommand)) {
             synchronized (resource) {
                 // Controllo se sono in ispezione e se il topic in ispezione è lo stesso del topic di questo client
                 if (resource.equalsInpectedTopic(topic)) {
@@ -290,8 +298,8 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Elenca tutti i messaggi che questo publisher ha
-     * pubblicato sul topic
+     * Manda un elenco di tutti i messaggi, che il publisher associato a questo ClientHandler
+     * ha inviato su questo topic, al publier che li ha inviati
      */
     public void listExecute() {
         StringBuilder stringBuilder;
@@ -308,8 +316,11 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Prova a eseguire il comando listAll se il server non è in fase
-     * di ispezione
+     * Manda un elenco di tutti i messaggi scambiati su questo topic al client associato a questo ClientHandler.
+     * Se il server è in fase di ispezione mette il comando in coda per essere eseguito al termine dell'ispezione.
+     * Parameter deve essere vuoto perchè il metodo vada a buon fine
+     *
+     * @param parameter stringa contenente eventuali parametri ricevuti col comando listAll
      */
     private void listAll(String parameter) {
         if (!Objects.equals(parameter, "")) {
@@ -336,7 +347,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Elenca tutti i messaggi inviati sul topic
+     * Manda un elenco di tutti i messaggi scambiati su questo topic al client associato a questo ClientHandler.
      */
     public void listallExecute() {
         String result = resource.listAll(topic);
@@ -349,20 +360,19 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Interrompe la connessione al server per questo client.
+     * Interrompe la connessione al server per il client associato al ClientHandler.
      */
     public synchronized void quit() {
         synchronized (runningLock) {
             running = false;
         }
         clientPW.println("Server Disconnesso");
-        try {
-            socket.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        closeSocket();
     }
 
+    /**
+     * Rilascia tutte le risorse associate a questo ClientHandler
+     */
     private void releaseResources() {
         if (topic != null) {
             topic.removeSubscriber(this);
@@ -370,6 +380,11 @@ public class ClientHandler implements Runnable {
         resource.removeClient(this);
     }
 
+    /**
+     * verifica in maniera sincrona se la variabile running è vera o falsa
+     *
+     * @return true se running è vera false altrimenti
+     */
     private Boolean isRunning() {
         synchronized (runningLock) {
             return running;
@@ -377,10 +392,10 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Cancella un messaggio su un certo topic
+     * Cancella un messaggio relativo a un certo topic dalla copia locale di questo ClientHandler se presente
      *
-     * @param id id del messaggio da cancellare
      * @param t  topic dove si trova il messaggio da cancellare
+     * @param id del messaggio da cancellare
      */
     public void delMessage(Topic t, int id) {
         // l'operazione non viene eseguita se il topic passato come parametro
@@ -391,10 +406,10 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Aggiunge un messaggio sia alla lista dei messaggi inviati
-     * dal client, che a quelli presenti sul topic del publisher
+     * Aggiunge un messaggio sia alla lista locale dei messaggi inviati
+     * dal client associato a questo ClientHandler, che a quelli presenti sul topic del publisher
      *
-     * @param mess messaggio inviato
+     * @param mess messaggio ricevuto dal client associato a questo ClientHandler
      */
     private void addMessage(Message mess) {
         //Salva il messaggio

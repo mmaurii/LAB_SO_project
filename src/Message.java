@@ -3,6 +3,7 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * La classe definisce un messaggio di testo all'interno della comunicazione tra publisher e subscriber
+ * e serve per la memorizzazione del messaggio sul server
  */
 public class Message {
     private static int idCounter = 0;
@@ -27,10 +28,16 @@ public class Message {
         return id;
     }
 
+    /**
+     * @return restituisce sotto forma di stringa il testo del messaggio
+     */
     public String getTesto() {
         return text;
     }
 
+    /**
+     * @return di una stringa contenente il messaggio pronto per l'output
+     */
     @Override
     public String toString() {
         return "ID: " + id + "\nTesto: " + text + "\nData: " +

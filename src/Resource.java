@@ -3,12 +3,18 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Questa classe viene usata per memorizzare i dati relativi alle comunicazioni sul server
+ * e per gestirne l'accesso in questo modo viene garantito che non ci siano problemi di concorrenza
+ */
 public class Resource {
     //set di tutti i topic che sono stati creati sul server
     private final HashSet<Topic> topics = new HashSet<>();
     //elenco di tutti i client connessi al server sia subscriber che publisher
     private final HashSet<ClientHandler> clients = new HashSet<>();
+    //rappresenta il topic in fase di ispezione se non null
     private Topic inspectedTopic = null;
+    //oggetto di sincronizzazione per la variabile inspectedTopic
     final Object inspectedObjectsLock = new Object();
     //Buffer per i comandi in attesa durante la fase di ispezione
     final LinkedList<Command> commandsBuffer = new LinkedList<>();

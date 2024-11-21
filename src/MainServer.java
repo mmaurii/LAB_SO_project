@@ -18,6 +18,7 @@ public class MainServer {
 
         Server server = new Server(portNumber);
         Thread threadServer = new Thread(server);
+        threadServer.setName("server");
         threadServer.start();
 
         try {

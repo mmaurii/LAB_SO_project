@@ -10,6 +10,7 @@ public class Server implements Runnable {
     private final Object runningLock = new Object();
     private final SocketListener socketListener;
     private final Resource resource;
+    Thread socketListenerThread;
 
     //definizione nomi comandi
     private final String deleteCommand = "delete";
@@ -22,7 +23,8 @@ public class Server implements Runnable {
     public Server(int portNumber) {
         this.resource = new Resource();
         this.socketListener = new SocketListener(this, portNumber);
-        Thread socketListenerThread = new Thread(socketListener);
+        socketListenerThread = new Thread(socketListener);
+        socketListenerThread.setName("SocketListener");
         socketListenerThread.start();
     }
 
@@ -53,11 +55,11 @@ public class Server implements Runnable {
             }
         }
 
-//        try {
-//            socketListenerThread.join();
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
+        try {
+            socketListenerThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Resource getResource() {
