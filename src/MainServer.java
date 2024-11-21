@@ -4,21 +4,17 @@
  */
 public class MainServer {
     public static void main(String[] args) {
-        final int portNumber = 9000;
-        String localHost = "127.0.0.1";
+        int portNumber = 9000;
 
-                /*
-        // Verifica se host e porta sono passati come argomenti (opzionale)
-        if (args.length >= 2) {
-            host = args[0];
+        // Verifica se host e porta sono passati come argomenti
+        if (args.length >= 1) {
             try {
-                portNumber = Integer.parseInt(args[1]);
+                portNumber = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                System.err.println("Errore: inserisci un numero di porta.");
+                System.err.println("Errore: inserisci un numero di porta per la socket.");
                 return;
             }
         }
-         */
 
         Server server = new Server(portNumber);
         Thread threadServer = new Thread(server);

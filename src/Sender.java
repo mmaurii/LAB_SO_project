@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 /**
@@ -20,34 +17,26 @@ public class Sender extends Thread {
      */
     @Override
     public void run() {
-        BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader bf = new BufferedReader(new InputStreamReader(System.in););
         try {
             PrintWriter to = new PrintWriter(this.s.getOutputStream(), true);
             while (!Thread.interrupted()) {
-                if (bf.ready()) {
                     String request = bf.readLine();
                     /*
                      * se il thread è stato interrotto mentre leggevamo l'input da tastiera, inviamo
                      * "quit" al server e usciamo
                      */
-//                    if (Thread.interrupted()) {
-//                        //to.println(quitCommand);
-//                        break;
-//                    }
+                    if (Thread.interrupted()) {
+                        break;
+                    }
                     // in caso contrario proseguiamo e spediamo l'input inserito
                     to.println(request);
                     if (request.equals(quitCommand)) {
                         break;
                     }
-                }
-
-                //controllo se il server si è disconnesso
-//                if (Thread.interrupted()) {
-////                    to.println(quitCommand);
-////                    System.out.println("Il server si è disconnesso");
-//                    break;
-//                }
             }
+            System.out.println("Connessione terminata");
+
         } catch (IOException e) {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();

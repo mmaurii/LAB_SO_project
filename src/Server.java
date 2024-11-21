@@ -18,12 +18,11 @@ public class Server implements Runnable {
     private final String endCommand = "end";
     private final String inspectCommand = "inspect";
     private final String showCommand = "show";
-    Thread socketListenerThread;
 
     public Server(int portNumber) {
         this.resource = new Resource();
         this.socketListener = new SocketListener(this, portNumber);
-        this.socketListenerThread = new Thread(socketListener);
+        Thread socketListenerThread = new Thread(socketListener);
         socketListenerThread.start();
     }
 

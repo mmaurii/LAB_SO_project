@@ -28,13 +28,13 @@ public class Receiver extends Thread {
             String line;
             while ((line = from.readLine()) != null) {
                 if (line.equals(quitCommand)) {
-                    System.out.println("Il server si è disconneso");
+                    System.out.println("Il server si e' disconneso");
                     break;
                 }
                 System.out.println(line);
             }
         } catch (IOException e) {
-            System.out.println("Il server si è impropriamente disconnesso");
+            System.out.println("Il server si e' impropriamente disconnesso");
         } finally {
             sender.interrupt();
         }

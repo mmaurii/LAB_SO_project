@@ -29,8 +29,7 @@ public class Command {
             case "listall" -> sender.listallExecute();
             case "send" -> {
                 sender.sendExecute(message);
-
-                sender.notifyClient("Il tuo messaggio \"" + message.getTesto() +  "\" è stato inviato");
+                sender.forward("Il tuo messaggio \"" + message.getTesto() +  "\" è stato inviato");
             }
         }
     }

@@ -2,7 +2,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.*;
@@ -84,10 +83,12 @@ public class ClientHandler implements Runnable {
             clientPW.close();
             clientMessage.close();
         } catch (SocketException se) {
-            System.err.println("ClientHandler SocketException: " + se);
-            System.out.println("Il client "+this+" si è impropriamente disconnesso");
-            System.err.println("Rilascio tutte le risorse associate al client...");
-            quit();
+            if(isRunning()) {
+                System.err.println("ClientHandler SocketException: " + se);
+                System.out.println("Il client " + this + " si è impropriamente disconnesso");
+                System.out.println("Rilascio tutte le risorse associate al client...");
+                quit();
+            }
         } catch (IOException e) {
             System.err.println("ClientHandler IOException: " + e);
         } finally {
@@ -250,7 +251,7 @@ public class ClientHandler implements Runnable {
      *
      * @param text testo da inviare al PrintWriter
      */
-    public void forward(String text) {
+    public synchronized void forward(String text) {
         clientPW.println(text);
     }
 
@@ -280,17 +281,14 @@ public class ClientHandler implements Runnable {
      */
     public void listExecute() {
         StringBuilder stringBuilder;
-        synchronized (messages) {//togliere
-            if (messages.isEmpty()) {
-                clientPW.println("Non ci sono messaggi");
-                return;
-            }
+        if (messages.isEmpty()) {
+            clientPW.println("Non ci sono messaggi");
+            return;
+        }
 
-            // funzionalità
-            stringBuilder = new StringBuilder("Messaggi:");
-            for (Message mess : messages) {
-                stringBuilder.append(mess.replyString());
-            }
+        stringBuilder = new StringBuilder("Messaggi inviati da questo client:");
+        for (Message mess : messages) {
+            stringBuilder.append(mess.replyString());
         }
         clientPW.println(stringBuilder);
     }
@@ -334,26 +332,16 @@ public class ClientHandler implements Runnable {
     /**
      * Interrompe la connessione al server per questo client.
      */
-    public synchronized void quitLocal() {
-        synchronized (runningLock) {
-            running = false; //meglio usare l'interrupt?
-        }
-        if (topic != null) {
-            topic.removeSubscriber(this);
-        }
-        clientPW.println("Terminata la connessione al server");
-        clientPW.println(quitCommand);
-        System.out.println("Interruzione client "+this);
-    }
-
-    /**
-     * Interrompe la connessione al server per questo client.
-     */
     public synchronized void quit() {
         synchronized (runningLock) {
             running = false;
         }
-        clientPW.println("Terminata la connessione al server");
+        clientPW.println("Server Disconnesso");
+        try {
+            socket.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void releaseResources() {
@@ -376,13 +364,11 @@ public class ClientHandler implements Runnable {
      * @param t  topic dove si trova il messaggio da cancellare
      */
     public void delMessage(Topic t, int id) {
-        //synchronized (messages) {//inutile
         // l'operazione non viene eseguita se il topic passato come parametro
         // è diverso da quello del client
         if (topic == t) {
             messages.removeIf(m -> m.getID() == id);
         }
-        //}
     }
 
     /**
@@ -393,13 +379,7 @@ public class ClientHandler implements Runnable {
      */
     private void addMessage(Message mess) {
         //Salva il messaggio
-        synchronized (messages) {//togliere
-            messages.add(mess);
-            topic.addMessage(mess);
-        }
-    }
-
-    public void notifyClient(String message) {
-        clientPW.println(message);
+        messages.add(mess);
+        topic.addMessage(mess);
     }
 }

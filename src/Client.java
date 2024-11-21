@@ -10,8 +10,8 @@ public class Client {
         // Impostazioni di default per host e porta
         String host = "127.0.0.1";
         int port = 9000;
-        /*
-        // Verifica se host e porta sono passati come argomenti (opzionale)
+
+        // Verifica se host e porta sono passati come argomenti
         if (args.length >= 2) {
             host = args[0];
             try {
@@ -21,7 +21,7 @@ public class Client {
                 return;
             }
         }
-         */
+
 
         // Gestione connessione
         try (Socket socket = new Socket(host, port)) {
@@ -37,8 +37,6 @@ public class Client {
             // Attesa della fine dei thread
             sender.join();
             receiver.join();
-
-            socket.close();
 
         } catch (IOException e) {
             System.err.println("Errore: Il server è irraggiungibile, " +

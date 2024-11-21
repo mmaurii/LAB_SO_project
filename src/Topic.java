@@ -35,7 +35,7 @@ public class Topic {
                 StringBuilder sb = new StringBuilder();
 
                 sb.append("Sono stati inviati " + messages.size() + " messaggi in questo topic.\n");
-                sb.append("MESSAGGI:");
+                sb.append("Messaggi inviati:");
                 for (Message m : messages) {
                     sb.append(m.replyString());
                 }
@@ -96,10 +96,4 @@ public class Topic {
     public int hashCode() {
         return title.hashCode();
     }
-
-    @Override
-    public String toString(){
-        return String.format("%s: %s",title,messages);
-    }
-
 }
