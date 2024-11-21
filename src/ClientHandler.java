@@ -70,20 +70,25 @@ public class ClientHandler implements Runnable {
                 switch (command) {
                     case publishCommand -> publish(parameter);
                     case subscribeCommand -> subscribe(parameter);
-                    case showCommand -> show();
+                    case showCommand -> show(parameter);
                     case quitCommand -> {
-                        quit();
-                        System.out.println("Interruzione client "+this);}
+                        if (!Objects.equals(parameter, "")) {
+                            clientPW.println("Questo comando non accetta parametri");
+                        } else {
+                            quit();
+                            System.out.println("Interruzione client " + this);
+                        }
+                    }
                     case sendCommand -> send(parameter);
-                    case listCommand -> list();
-                    case listAllCommand -> listAll();
+                    case listCommand -> list(parameter);
+                    case listAllCommand -> listAll(parameter);
                     default -> clientPW.printf("Comando non riconosciuto: %s\n", command);
                 }
             }
             clientPW.close();
             clientMessage.close();
         } catch (SocketException se) {
-            if(isRunning()) {
+            if (isRunning()) {
                 System.err.println("ClientHandler SocketException: " + se);
                 System.out.println("Il client " + this + " si è impropriamente disconnesso");
                 System.out.println("Rilascio tutte le risorse associate al client...");
@@ -164,7 +169,11 @@ public class ClientHandler implements Runnable {
     /**
      * elenca i topic presenti
      */
-    private void show() {
+    private void show(String parameter) {
+        if (!Objects.equals(parameter, "")) {
+            clientPW.println("Questo comando non accetta parametri");
+            return;
+        }
         String listOfTopics = resource.show();
 
         if (listOfTopics.isEmpty()) {
@@ -259,7 +268,12 @@ public class ClientHandler implements Runnable {
      * Prova a eseguire il comando list se il server non è
      * in fase di ispezione
      */
-    private void list() {
+    private void list(String parameter) {
+        if (!Objects.equals(parameter, "")) {
+            clientPW.println("Questo comando non accetta parametri");
+            return;
+        }
+
         if (isPublisherCommand(listCommand)) {
             //controllo se il server è in fase di ispezione
             synchronized (resource) {
@@ -294,10 +308,15 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Prova ad eseguire il comando listAll se il server non è in fase
+     * Prova a eseguire il comando listAll se il server non è in fase
      * di ispezione
      */
-    private void listAll() {
+    private void listAll(String parameter) {
+        if (!Objects.equals(parameter, "")) {
+            clientPW.println("Questo comando non accetta parametri");
+            return;
+        }
+
         if (topic == null) {
             clientPW.println("Devi registrarti come publisher o subscriber " +
                     "prima di poter eseguire questo comando");

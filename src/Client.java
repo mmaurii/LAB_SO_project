@@ -3,7 +3,7 @@ import java.net.Socket;
 
 /**
  * La classe client si preoccupa di istanziare una socket, connettersi al server
- * e di gestire i thread Sender e Reciver
+ * e di gestire i thread Sender e Receiver
  */
 public class Client {
     public static void main(String[] args) {

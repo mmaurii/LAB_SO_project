@@ -17,7 +17,7 @@ public class Sender extends Thread {
      */
     @Override
     public void run() {
-        BufferedReader bf = new BufferedReader(new InputStreamReader(System.in););
+        BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
         try {
             PrintWriter to = new PrintWriter(this.s.getOutputStream(), true);
             while (!Thread.interrupted()) {
