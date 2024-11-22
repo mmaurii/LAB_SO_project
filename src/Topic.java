@@ -92,8 +92,7 @@ public class Topic {
     public void forwardToAll(Message message) {
         synchronized (subscribersLock) {
             for (ClientHandler c : subscribers) {
-                c.forward("Nuovo messaggio pubblicato");
-                c.forward(message.toString());
+                c.forward("Nuovo messaggio pubblicato\n" + message.toString());
             }
         }
     }
