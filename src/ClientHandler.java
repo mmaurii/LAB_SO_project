@@ -68,23 +68,7 @@ public class ClientHandler implements Runnable {
                 }
 
                 // gestione comandi
-                switch (command) {
-                    case publishCommand -> publish(parameter);
-                    case subscribeCommand -> subscribe(parameter);
-                    case showCommand -> show(parameter);
-                    case quitCommand -> {
-                        if (!Objects.equals(parameter, "")) {
-                            clientPW.println("Questo comando non accetta parametri");
-                        } else {
-                            quit();
-                            System.out.println("Interruzione client " + this);
-                        }
-                    }
-                    case sendCommand -> send(parameter);
-                    case listCommand -> list(parameter);
-                    case listAllCommand -> listAll(parameter);
-                    default -> clientPW.printf("Comando non riconosciuto: %s\n", command);
-                }
+                menageCommands(command, parameter);
             }
             clientPW.close();
             clientMessage.close();
@@ -100,9 +84,55 @@ public class ClientHandler implements Runnable {
             System.err.println("ClientHandler IOException: " + e);
         } finally {
             releaseResources();
-//            if (!socket.isClosed()) {
-//                closeSocket();
-//            }
+            if (!socket.isClosed()) {
+                closeSocket();
+            }
+        }
+    }
+
+    /**
+     * Gestisce tutti i comandi di input che il ClientHandler può ricevere dal client associato.
+     * Se un comando riceve parametri ma non sono previsti stampa un messaggio di errore a console
+     *
+     * @param command stringa contenente il nome del comando da eseguire
+     * @param parameter stringa contenente eventuali parametri se necessari per command
+     */
+    private void menageCommands(String command, String parameter) {
+        String outMesCommandWithOutParameters = "Questo comando non accetta parametri";
+        switch (command) {
+            case publishCommand -> publish(parameter);
+            case subscribeCommand -> subscribe(parameter);
+            case showCommand -> {
+                if (!Objects.equals(parameter, "")) {
+                    clientPW.println(outMesCommandWithOutParameters);
+                }else{
+                    show();
+                }
+            }
+            case quitCommand -> {
+                if (!Objects.equals(parameter, "")) {
+                    clientPW.println(outMesCommandWithOutParameters);
+                } else {
+                    quit();
+                    System.out.println("Interruzione client " + this);
+                }
+            }
+            case sendCommand -> send(parameter);
+            case listCommand -> {
+                if (!Objects.equals(parameter, "")) {
+                    clientPW.println(outMesCommandWithOutParameters);
+                }else{
+                    list();
+                }
+            }
+            case listAllCommand -> {
+                if (!Objects.equals(parameter, "")) {
+                    clientPW.println(outMesCommandWithOutParameters);
+                }else{
+                    listAll();
+                }
+            }
+            default -> clientPW.printf("Comando non riconosciuto: %s\n", command);
         }
     }
 
@@ -170,15 +200,9 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Elenca i topic presenti sul server, parameter deve essere vuoto affinché il metodo vada a buon fine
-     *
-     * @param parameter stringa contenente eventuali parametri ricevuti col comando show
+     * elenca i topic presenti sul server, parameter deve essere vuoto perchè il metodo vada a buon fine
      */
-    private void show(String parameter) {
-        if (!Objects.equals(parameter, "")) {
-            clientPW.println("Questo comando non accetta parametri");
-            return;
-        }
+    private void show() {
         String listOfTopics = resource.show();
 
         if (listOfTopics.isEmpty()) {
@@ -192,7 +216,7 @@ public class ClientHandler implements Runnable {
      * Controlla se un comando è eseguibile dai publisher
      *
      * @param command stringa contente il nome del comando su cui fare il controllo
-     * @return true se il comando è eseguibile dai publisher, false altrimenti
+     * @return true se il comando è eseguibile dai publisher, false alrimenti
      */
     private boolean isPublisherOrSubscribeCommand(String command) {
         // false = publisher, true = subscriber
@@ -263,7 +287,7 @@ public class ClientHandler implements Runnable {
     /**
      * Invia una stringa al client associato al ClientHandler
      *
-     * @param text stringa contenente il testo da inviare al client
+     * @param text stringa contennete il testo da inviare al client
      */
     public synchronized void forward(String text) {
         clientPW.println(text);
@@ -271,18 +295,10 @@ public class ClientHandler implements Runnable {
 
     /**
      * Manda un elenco di tutti i messaggi, che il publisher associato a questo ClientHandler
-     * ha inviato su questo topic, al publisher che li ha inviati.
+     * ha inviato su questo topic, al publier che li ha inviati.
      * Se il server è in fase di ispezione mette il comando in coda per essere eseguito al termine dell'ispezione.
-     * Parameter deve essere vuoto affinché il metodo vada a buon fine
-     *
-     * @param parameter stringa contenente eventuali parametri ricevuti col comando list
      */
-    private void list(String parameter) {
-        if (!Objects.equals(parameter, "")) {
-            clientPW.println("Questo comando non accetta parametri");
-            return;
-        }
-
+    private void list() {
         if (isPublisherOrSubscribeCommand(listCommand)) {
             synchronized (resource) {
                 // Controllo se sono in ispezione e se il topic in ispezione è lo stesso del topic di questo client
@@ -299,7 +315,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Manda un elenco di tutti i messaggi, che il publisher associato a questo ClientHandler
-     * ha inviato su questo topic, al publisher che li ha inviati
+     * ha inviato su questo topic, al publier che li ha inviati
      */
     public void listExecute() {
         StringBuilder stringBuilder;
@@ -318,16 +334,8 @@ public class ClientHandler implements Runnable {
     /**
      * Manda un elenco di tutti i messaggi scambiati su questo topic al client associato a questo ClientHandler.
      * Se il server è in fase di ispezione mette il comando in coda per essere eseguito al termine dell'ispezione.
-     * Parameter deve essere vuoto affinché il metodo vada a buon fine
-     *
-     * @param parameter stringa contenente eventuali parametri ricevuti col comando listAll
      */
-    private void listAll(String parameter) {
-        if (!Objects.equals(parameter, "")) {
-            clientPW.println("Questo comando non accetta parametri");
-            return;
-        }
-
+    private void listAll() {
         if (topic == null) {
             clientPW.println("Devi registrarti come publisher o subscriber " +
                     "prima di poter eseguire questo comando");
@@ -381,7 +389,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Verifica in maniera sincrona se la variabile running è vera o falsa
+     * verifica in maniera sincrona se la variabile running è vera o falsa
      *
      * @return true se running è vera false altrimenti
      */

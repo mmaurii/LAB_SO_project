@@ -19,6 +19,8 @@ public class Server implements Runnable {
     private final String endCommand = "end";
     private final String inspectCommand = "inspect";
     private final String showCommand = "show";
+    //output var
+    String outMesCommandWithOutParameters = "Questo comando non accetta parametri";
 
     public Server(int portNumber) {
         this.resource = new Resource();
@@ -76,14 +78,14 @@ public class Server implements Runnable {
         switch (command) {
             case quitCommand -> {
                 if(parameter!=null){
-                    System.out.println("Questo comando non accetta parametri");
+                    System.out.println(outMesCommandWithOutParameters);
                 }else {
                     quit();
                 }
             }
             case showCommand -> {
                 if(parameter!=null){
-                    System.out.println("Questo comando non accetta parametri");
+                    System.out.println(outMesCommandWithOutParameters);
                 }else {
                     show();
                 }
@@ -103,14 +105,14 @@ public class Server implements Runnable {
         switch (command) {
             case listAllCommand -> {
                 if(parameter!=null){
-                    System.out.println("Questo comando non accetta parametri");
+                    System.out.println(outMesCommandWithOutParameters);
                 }else {
                     listAll();
                 }
             }
             case endCommand -> {
                 if(parameter!=null){
-                    System.out.println("Questo comando non accetta parametri");
+                    System.out.println(outMesCommandWithOutParameters);
                 }else {
                     end();
                 }
