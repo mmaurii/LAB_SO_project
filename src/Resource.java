@@ -82,7 +82,7 @@ public class Resource {
     /**
      * Esegue in ordine di ricezione i comandi presenti sul commandBuffer
      * che sono stati ricevuti durante la fase di ispezione.
-     * Una volta eseguiti tuttti svuota il buffer
+     * Una volta eseguiti tutti svuota il buffer
      */
     private void executeOperation() {
         synchronized (commandsBuffer) {
@@ -224,7 +224,7 @@ public class Resource {
      * @return Se inspectedTopic è null ritorna false.
      *         Altrimenti ritorna il risultato dato dal metodo equals di default per la classe Topic
      */
-    public boolean equalsInpectedTopic(Topic topic) {
+    public boolean equalsInspectedTopic(Topic topic) {
         synchronized (inspectedObjectsLock) {
             if (inspectedTopic != null) {
                 return inspectedTopic.equals(topic);
@@ -235,7 +235,7 @@ public class Resource {
     }
 
     /**
-     * Disconnette tutti i client connessi al server
+     * Sconnette tutti i client connessi al server
      */
     public void removeAllClients() {
         synchronized (clients) {

@@ -4,7 +4,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 
 /**
- * La classe Reciver sta in ascolto sulla socket e attende che arrivino messaggi dal server per
+ * La classe Receiver sta in ascolto sulla socket e attende che arrivino messaggi dal server per
  * presentarli poi a console
  */
 public class Receiver extends Thread {

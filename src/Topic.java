@@ -3,7 +3,7 @@ import java.util.HashSet;
 
 /**
  * La classe definisce un argomento di discussione su cui
- * possonono esssere scambiati messaggi, e a cui i subscribers possono iscriversi per riceverli
+ * possono essere scambiati messaggi, e a cui i subscribers possono iscriversi per riceverli
  */
 public class Topic {
     //nome del topic

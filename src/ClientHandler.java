@@ -170,7 +170,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * elenca i topic presenti sul server, parameter deve essere vuoto perchè il metodo vada a buon fine
+     * Elenca i topic presenti sul server, parameter deve essere vuoto affinché il metodo vada a buon fine
      *
      * @param parameter stringa contenente eventuali parametri ricevuti col comando show
      */
@@ -192,7 +192,7 @@ public class ClientHandler implements Runnable {
      * Controlla se un comando è eseguibile dai publisher
      *
      * @param command stringa contente il nome del comando su cui fare il controllo
-     * @return true se il comando è eseguibile dai publisher, false alrimenti
+     * @return true se il comando è eseguibile dai publisher, false altrimenti
      */
     private boolean isPublisherOrSubscribeCommand(String command) {
         // false = publisher, true = subscriber
@@ -234,7 +234,7 @@ public class ClientHandler implements Runnable {
                 synchronized (resource) {
                     //controllo se il server è in fase di ispezione
                     // Controllo se il topic in ispezione è lo stesso del topic di questo client
-                    if (resource.equalsInpectedTopic(topic)) {
+                    if (resource.equalsInspectedTopic(topic)) {
                         // Messaggio in attesa
                         clientPW.printf("Messaggio \"%s\" in attesa. Il server è in fase d'ispezione.\n", text);
                         Command command = new Command(sendCommand, mess, this);
@@ -263,7 +263,7 @@ public class ClientHandler implements Runnable {
     /**
      * Invia una stringa al client associato al ClientHandler
      *
-     * @param text stringa contennete il testo da inviare al client
+     * @param text stringa contenente il testo da inviare al client
      */
     public synchronized void forward(String text) {
         clientPW.println(text);
@@ -271,9 +271,9 @@ public class ClientHandler implements Runnable {
 
     /**
      * Manda un elenco di tutti i messaggi, che il publisher associato a questo ClientHandler
-     * ha inviato su questo topic, al publier che li ha inviati.
+     * ha inviato su questo topic, al publisher che li ha inviati.
      * Se il server è in fase di ispezione mette il comando in coda per essere eseguito al termine dell'ispezione.
-     * parameter deve essere vuoto perchè il metodo vada a buon fine
+     * Parameter deve essere vuoto affinché il metodo vada a buon fine
      *
      * @param parameter stringa contenente eventuali parametri ricevuti col comando list
      */
@@ -286,7 +286,7 @@ public class ClientHandler implements Runnable {
         if (isPublisherOrSubscribeCommand(listCommand)) {
             synchronized (resource) {
                 // Controllo se sono in ispezione e se il topic in ispezione è lo stesso del topic di questo client
-                if (resource.equalsInpectedTopic(topic)) {
+                if (resource.equalsInspectedTopic(topic)) {
                     clientPW.printf("Comando \"list\" in attesa. Il server è in fase d'ispezione.\n");
                     resource.addCommand(new Command(listCommand, this));
                     return;
@@ -299,7 +299,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Manda un elenco di tutti i messaggi, che il publisher associato a questo ClientHandler
-     * ha inviato su questo topic, al publier che li ha inviati
+     * ha inviato su questo topic, al publisher che li ha inviati
      */
     public void listExecute() {
         StringBuilder stringBuilder;
@@ -318,7 +318,7 @@ public class ClientHandler implements Runnable {
     /**
      * Manda un elenco di tutti i messaggi scambiati su questo topic al client associato a questo ClientHandler.
      * Se il server è in fase di ispezione mette il comando in coda per essere eseguito al termine dell'ispezione.
-     * Parameter deve essere vuoto perchè il metodo vada a buon fine
+     * Parameter deve essere vuoto affinché il metodo vada a buon fine
      *
      * @param parameter stringa contenente eventuali parametri ricevuti col comando listAll
      */
@@ -336,7 +336,7 @@ public class ClientHandler implements Runnable {
 
         synchronized (resource) {
             // Controllo se sono in ispezione e se il topic in ispezione è lo stesso del topic di questo client
-            if (resource.equalsInpectedTopic(topic)) {
+            if (resource.equalsInspectedTopic(topic)) {
                 clientPW.printf("Comando \"listall\" in attesa. Il server è in fase d'ispezione.\n");
                 resource.addCommand(new Command(listAllCommand, this));
                 return;
@@ -381,7 +381,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * verifica in maniera sincrona se la variabile running è vera o falsa
+     * Verifica in maniera sincrona se la variabile running è vera o falsa
      *
      * @return true se running è vera false altrimenti
      */

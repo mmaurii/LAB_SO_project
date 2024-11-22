@@ -2,7 +2,7 @@ import java.util.*;
 
 /**
  * La classe Server si occupa di fornire un interfaccia console con cui interfacciarsi
- * al server. Inoltre mette a disposizione le proprie risorse in maniera sicura e instanzia
+ * al server. Inoltre mette a disposizione le proprie risorse in maniera sicura e istanzia
  * durante l'inizializzazione un thread SocketListener. Adibito alla gestione di nuove connessioni da parte di client.
  */
 public class Server implements Runnable {
@@ -141,7 +141,7 @@ public class Server implements Runnable {
      * Imposta il topic ispezionato se è presente, altrimenti
      * segnala a console che non esiste il topic preso come parametro
      *
-     * @param topicName stringac contenente il nome del topic che si vuole ispezionare
+     * @param topicName stringa contenente il nome del topic che si vuole ispezionare
      */
     private void inspect(String topicName) {
         if (topicName == null) {
