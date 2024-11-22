@@ -6,7 +6,7 @@ public class MainServer {
     public static void main(String[] args) {
         int portNumber = 9000;
 
-        // Verifica se host e porta sono passati come argomenti
+        // Verifica se la porta è passata come parametro
         if (args.length >= 1) {
             try {
                 portNumber = Integer.parseInt(args[0]);

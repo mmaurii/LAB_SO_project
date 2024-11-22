@@ -3,16 +3,16 @@ import java.util.*;
 /**
  * La classe Server si occupa di fornire un interfaccia console con cui interfacciarsi
  * al server. Inoltre mette a disposizione le proprie risorse in maniera sicura e instanzia
- * durante l'inizializzazione un thread SocketListener.
+ * durante l'inizializzazione un thread SocketListener. Adibito alla gestione di nuove connessioni da parte di client.
  */
 public class Server implements Runnable {
     private boolean running = true;
     private final Object runningLock = new Object();
     private final SocketListener socketListener;
     private final Resource resource;
-    Thread socketListenerThread;
+    private final Thread socketListenerThread;
 
-    //definizione nomi comandi
+    //definizione comandi server
     private final String deleteCommand = "delete";
     private final String quitCommand = "quit";
     private final String listAllCommand = "listall";
@@ -29,7 +29,7 @@ public class Server implements Runnable {
     }
 
     /**
-     * Mette il thread in ascolto per eventuali comandi del server
+     * Mette il thread in ascolto per eventuali comandi in input da console
      */
     @Override
     public void run() {
@@ -69,13 +69,25 @@ public class Server implements Runnable {
     /**
      * Comandi per quando non si sta ispezionando un topic
      *
-     * @param command   comando, prima parte del input utente
-     * @param parameter valore per i comandi che hanno parametri
+     * @param command stringa contenente il comando, prima parte del input utente
+     * @param parameter stringa contenente il valore per i comandi che hanno parametri
      */
     private void notInspecting(String command, String parameter) {
         switch (command) {
-            case quitCommand -> quit(parameter);
-            case showCommand -> show(parameter);
+            case quitCommand -> {
+                if(parameter!=null){
+                    System.out.println("Questo comando non accetta parametri");
+                }else {
+                    quit();
+                }
+            }
+            case showCommand -> {
+                if(parameter!=null){
+                    System.out.println("Questo comando non accetta parametri");
+                }else {
+                    show();
+                }
+            }
             case inspectCommand -> inspect(parameter);
             default -> System.out.printf("Comando non riconosciuto: %s\n", command);
         }
@@ -84,40 +96,52 @@ public class Server implements Runnable {
     /**
      * Comandi per quando si sta ispezionando un topic
      *
-     * @param command   comando, prima parte del input utente
-     * @param parameter valore per i comandi che hanno parametri
+     * @param command stinga contenente il comando, prima parte del input utente
+     * @param parameter stringa contenente il valore per i comandi che hanno parametri
      */
     private void inspecting(String command, String parameter) {
         switch (command) {
-            case listAllCommand -> listAll(parameter);
-            case endCommand -> end(parameter);
+            case listAllCommand -> {
+                if(parameter!=null){
+                    System.out.println("Questo comando non accetta parametri");
+                }else {
+                    listAll();
+                }
+            }
+            case endCommand -> {
+                if(parameter!=null){
+                    System.out.println("Questo comando non accetta parametri");
+                }else {
+                    end();
+                }
+            }
             case deleteCommand -> delete(parameter);
             default -> System.out.printf("Comando non riconosciuto: %s\n", command);
         }
     }
 
     /**
-     * Chiude tutte le connessioni coi client e arresta il server
+     * Chiude il thread in ascolto per nuove connessioni, termina tutte le connessioni già in essere coi client e arresta il server
      */
-    private void quit(String parameter) {
-        if(parameter!=null){
-            System.out.println("Questo comando non accetta parametri");
-            return;
-        }
+    private void quit() {
+        //fermo questo thread e interrompo tutti quelli che compongono il server
+        //rilasciando le risorse allocate
         synchronized (runningLock) {
             running = false;
         }
 
+        socketListenerThread.interrupt();
+        socketListener.close();
         System.out.println("Interruzione dei client connessi:");
         resource.removeAllClients();
-        socketListener.close();
+
     }
 
     /**
      * Imposta il topic ispezionato se è presente, altrimenti
-     * segnala al server che non esiste il topic inserito
+     * segnala a console che non esiste il topic preso come parametro
      *
-     * @param topicName topic che si vuole ispezionare
+     * @param topicName stringac contenente il nome del topic che si vuole ispezionare
      */
     private void inspect(String topicName) {
         if (topicName == null) {
@@ -140,12 +164,7 @@ public class Server implements Runnable {
     /**
      * Termina la fase di ispezione
      */
-    private void end(String parameter) {
-        if(parameter!=null){
-            System.out.println("Questo comando non accetta parametri");
-            return;
-        }
-
+    private void end() {
         synchronized (resource) {
             System.out.printf("Fine ispezione del topic %s.", resource.getInspectedTopicTitle());
             //esco dalla fase di ispezione
@@ -154,9 +173,10 @@ public class Server implements Runnable {
     }
 
     /**
-     * Cancella il messaggio con l'id specificato dal topic ispezionato
+     * Cancella il messaggio con l'id specificato dal topic ispezionato,
+     * il metodo deve essere invocato solo durante la fase di ispezione
      *
-     * @param parameter ID del messaggio che si vuole cancellare
+     * @param parameter stringa contenente l'ID del messaggio che si vuole cancellare
      */
     private void delete(String parameter) {
         int id;
@@ -172,13 +192,9 @@ public class Server implements Runnable {
     }
 
     /**
-     * Mostra i topic al server, se ce ne sono
+     * Mostra i topic presenti nella console del server, se ce ne sono
      */
-    private void show(String parameter) {
-        if(parameter!=null){
-            System.out.println("Questo comando non accetta parametri");
-            return;
-        }
+    private void show() {
         String listOfTopics = resource.show();
 
         if (listOfTopics.isEmpty()) {
@@ -189,15 +205,10 @@ public class Server implements Runnable {
     }
 
     /**
-     * Elenca tutti i messaggi nel topic selezionato col comando
-     * inspect durante la fase di ispezione
+     * Elenca tutti i messaggi nel topic in ispezione,
+     * il metodo deve essere invocato solo durante la fase di ispezione
      */
-    private void listAll(String parameter) {
-        if(parameter!=null){
-            System.out.println("Questo comando non accetta parametri");
-            return;
-        }
-
+    private void listAll() {
         if (resource.inspectedTopicIsNull()) {
             System.out.println("Nessun topic in fase di ispezione.");
             return;
@@ -223,7 +234,7 @@ public class Server implements Runnable {
     }
 
     /**
-     * @return true se il server è in esecuzione, false altrimenti
+     * @return true se il server non è in fase di chiusura, false altrimenti
      */
     public boolean isRunning() {
         synchronized (runningLock) {

@@ -25,7 +25,7 @@ public class SocketListener implements Runnable {
     }
 
     /**
-     * Avvio del server thread, in attesa di connessioni dai client
+     * Mi metto in attesa di connessioni dai client
      */
     @Override
     public void run() {
@@ -35,17 +35,20 @@ public class SocketListener implements Runnable {
                 try {
                     Socket clientSocket = serverSocket.accept();
                     System.out.printf("Nuova connessione da %s\n", clientSocket.getInetAddress());
-                    if (!Thread.interrupted()) {
-                        // crea un nuovo thread che gestisca la comunicazione istanziata
-                        ClientHandler ch = new ClientHandler(clientSocket, server);
-                        Thread t = new Thread(ch);
-                        t.setName("ClientHandler");
-                        children.add(t);
-                        t.start();
-                        server.addClient(ch);
-                    } else {
-                        serverSocket.close();
-                        break;
+                    synchronized (this) {
+                        if (!Thread.interrupted()) {
+                            // crea un nuovo thread che gestisca la comunicazione istanziata
+                            ClientHandler ch = new ClientHandler(clientSocket, server);
+                            Thread t = new Thread(ch);
+                            t.setName("ClientHandler");
+                            children.add(t);
+                            t.start();
+                            server.addClient(ch);
+                        } else {
+                            clientSocket.close();
+                            serverSocket.close();
+                            break;
+                        }
                     }
                 } catch (SocketException e) {
                     if (!server.isRunning()) {
@@ -56,7 +59,7 @@ public class SocketListener implements Runnable {
                     }
                 }
             }
-            serverSocket.close();
+            close();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -65,13 +68,10 @@ public class SocketListener implements Runnable {
     /**
      * Chiude la socket su cui il server è in ascolto per nuovi collegamenti di client
      */
-    public void close() {
+    public synchronized void close() {
         try {
-            for (Thread t : children){
-                t.join();
-            }
             serverSocket.close();
-        }  catch (InterruptedException | IOException e) {
+        }  catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

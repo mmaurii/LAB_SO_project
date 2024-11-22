@@ -20,7 +20,8 @@ public class Resource {
     final LinkedList<Command> commandsBuffer = new LinkedList<>();
 
     /**
-     * Mostra i topic al server, se ce ne sono
+     * Restituisce una stringa pronta per la stampa contenente tutti i topic presenti fin'ora sul server.
+     * Se non ci sono topic restituisce una stringa vuota
      */
     public String show() {
         synchronized (topics) {
@@ -40,7 +41,7 @@ public class Resource {
     /**
      * Restituisce il topic dato il suo titolo
      *
-     * @param title titolo del topic da restituire
+     * @param title stringa contente il titolo del topic da restituire
      * @return il topic richiesto, null se non è stato trovato
      */
     public Topic getTopicFromTitle(String title) {
@@ -56,15 +57,16 @@ public class Resource {
 
     /**
      * Ritorna una stringa per l'output contenente tutti i messaggi nel topic preso come parametro
-     * o "" se non ci sono messaggi.
+     * o una stringa vuota se non ci sono messaggi.
+     * Se il topic passato come parametro è null si prende come topic di riferimento quello in ispezione.
+     * Se non si è in ispezione si solleverà un NullPointerException.
      *
      * @param topic di cui restituire tutti i messaggi
-     * @return La stringa con tutti i messaggi del topic in ispezione se il topic è null.
-     * Se non si è in ispezione si solleverà un NullPointerException
-     * @throws NullPointerException se non si è in fase di ispezione
+     * @return Stringa contenente tutti i messaggi del topic in ispezione se topic è null, altrimenti
+     * tutti i messaggi sul topic preso come parametro
+     * @throws NullPointerException se non si è in fase di ispezione e topic è null
      */
     public String listAll(Topic topic) {
-
         if (topic == null) {
             if (inspectedTopic != null) {
                 return inspectedTopic.getStringMessages();
@@ -78,8 +80,9 @@ public class Resource {
 
 
     /**
-     * Esegue i comandi presenti sul commandBuffer
-     * che sono stati ricevuti durante la fase di ispezione
+     * Esegue in ordine di ricezione i comandi presenti sul commandBuffer
+     * che sono stati ricevuti durante la fase di ispezione.
+     * Una volta eseguiti tuttti svuota il buffer
      */
     private void executeOperation() {
         synchronized (commandsBuffer) {
@@ -91,7 +94,7 @@ public class Resource {
     }
 
     /**
-     * @return restituisce il topic che sta venendo ispezionato
+     * @return restituisce il nome del topic che sta venendo ispezionato
      * @throws NullPointerException se non si è in fase di ispezione
      */
     public String getInspectedTopicTitle() {
@@ -108,7 +111,8 @@ public class Resource {
      * Cancella il messaggio con l'id specificato dal topic ispezionato
      *
      * @param id del messaggio che si vuole cancellare
-     * @throws NullPointerException se non si è in fase di ispezione
+     * @return una stringa per l'output che specifica se il messaggio è stato eliminato o non è stato trovato
+     * @throws NullPointerException se il metodo viene richiamato mentre non si è in fase di ispezione
      */
     public String delete(int id) {
         if (inspectedTopic == null) {
@@ -133,9 +137,11 @@ public class Resource {
 
 
     /**
-     * Aggiunge un topic se non è presente
+     * Aggiunge un nuovo topic se non è già presente un topic con lo stesso nome
      *
-     * @param topic topic che si vuole aggiungere
+     * @param topic che si vuole aggiungere
+     * @return restituisce il topic che è stato aggiunto, o quello che era già presente
+     * se ce n'era già uno con lo stesso nome
      */
     public Topic addTopic(Topic topic) {
         synchronized (topics) {
@@ -152,17 +158,17 @@ public class Resource {
 
 
     /**
-     * Aggiunge un subscriber a un topic
+     * Aggiunge un Subscriber a un topic
      *
-     * @param client subscriber da iscrivere
-     * @param topic  topic a cui iscrivere il subscriber
-     * @return il topic a cui si è iscritto il client, null se non è presente quel topic
+     * @param subscriber da iscrivere
+     * @param topic a cui iscrivere il subscriber
+     * @return il topic a cui si è iscritto il subscriber, null se non è presente quel topic
      */
-    public Topic addSubscriber(ClientHandler client, Topic topic) {
+    public Topic addSubscriber(ClientHandler subscriber, Topic topic) {
         synchronized (topics) {
             for (Topic t : topics) {
                 if (topic.equals(t)) {
-                    t.addSubscriber(client);
+                    t.addSubscriber(subscriber);
                     return t;
                 }
             }
@@ -181,6 +187,13 @@ public class Resource {
         }
     }
 
+    /**
+     * Imposta il topic su cui si svolge l'ispezione.
+     * Se il topic preso come parametro è null si setta inspectedTopic a null (non più in ispezione),
+     * e si eseguono i comandi presenti nel commandBuffer.
+     *
+     * @param t topic da ispezionare
+     */
     public void setInspectedTopic(Topic t) {
         synchronized (inspectedObjectsLock) {
             if (t != null) {
@@ -192,12 +205,25 @@ public class Resource {
         }
     }
 
+    /**
+     * Verifica se inspectedTopic è null (non in fase di ispezione)
+     * o è valorizzato con un topic (topic in fase di ispezione)
+     *
+     * @return true se inspectedTopic è null, altrimenti false
+     */
     public boolean inspectedTopicIsNull() {
         synchronized (inspectedObjectsLock) {
             return inspectedTopic == null;
         }
     }
 
+    /**
+     * Verifica se un topic è uguale a quello in ispezione.
+     *
+     * @param topic su cui verificare l'uguaglianza con inspectedTopic.
+     * @return Se inspectedTopic è null ritorna false.
+     *         Altrimenti ritorna il risultato dato dal metodo equals di default per la classe Topic
+     */
     public boolean equalsInpectedTopic(Topic topic) {
         synchronized (inspectedObjectsLock) {
             if (inspectedTopic != null) {
@@ -208,6 +234,9 @@ public class Resource {
         }
     }
 
+    /**
+     * Disconnette tutti i client connessi al server
+     */
     public void removeAllClients() {
         synchronized (clients) {
             Iterator<ClientHandler> iter = clients.iterator();
@@ -222,7 +251,7 @@ public class Resource {
     }
 
     /**
-     * Aggiunge un ClientHandler alla lista dei client connessi
+     * Aggiunge un ClientHandler alla lista dei client connessi al server.
      *
      * @param ch ClientHandler da aggiungere
      */
@@ -232,6 +261,11 @@ public class Resource {
         }
     }
 
+    /**
+     * Rimuove il client preso come parametro dalla lista dei client connessi al server.
+     *
+     * @param clientHandler da rimuovere
+     */
     public void removeClient(ClientHandler clientHandler) {
         synchronized (clients) {
             this.clients.remove(clientHandler);

@@ -5,8 +5,9 @@
 public class Command {
     //nome del comando
     private final String command;
+    //chi l'ha ricevuto
     private final ClientHandler sender;
-    //eventuale contenuto
+    //eventuale contenuto se è un messaggio
     private Message message;
 
     public Command(String command, Message message, ClientHandler sender) {
@@ -29,6 +30,7 @@ public class Command {
             case "listall" -> sender.listallExecute();
             case "send" -> {
                 sender.sendExecute(message);
+                //notifico al client che il suo messaggio è stato inviato
                 sender.forward("Il tuo messaggio \"" + message.getTesto() +  "\" è stato inviato");
             }
         }

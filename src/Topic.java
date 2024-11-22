@@ -3,7 +3,7 @@ import java.util.HashSet;
 
 /**
  * La classe definisce un argomento di discussione su cui
- * possonono esssere scambiati messaggi
+ * possonono esssere scambiati messaggi, e a cui i subscribers possono iscriversi per riceverli
  */
 public class Topic {
     //nome del topic
@@ -27,6 +27,12 @@ public class Topic {
     }
 
 
+    /**
+     * Il metodo restituisce un elenco di tutti i messaggi scambiati su questo topic
+     * e il numero di messaggi scambiati
+     *
+     * @return una stringa pronta per l'output contenente il numero di messaggi scambiati e l'elenco dei relativi messaggi
+     */
     public String getStringMessages(){
         synchronized (messagesLock) {
             if (messages.isEmpty()) {
@@ -46,6 +52,8 @@ public class Topic {
     }
 
     /**
+     * Aggiunge un messaggio a questo topic
+     *
      * @param message messaggio da aggiungere al topic
      */
     public void addMessage(Message message) {
@@ -54,18 +62,33 @@ public class Topic {
         }
     }
 
+    /**
+     * Rimuove il messaggio con l'id preso come parametro da questo topic
+     *
+     * @param id intero e univoco relativo al messaggio da eliminare
+     * @return true se l'elemento è stato eliminato
+     */
     public boolean removeMessage(int id) {
         synchronized (messagesLock) {
             return messages.removeIf(m -> m.getID() == id);
         }
     }
 
-    public void addSubscriber(ClientHandler client) {
+    /**
+     * Aggiunge un subscriber a questo topic
+     * @param subscriber subscriber da aggiungere
+     */
+    public void addSubscriber(ClientHandler subscriber) {
         synchronized (subscribersLock){
-            subscribers.add(client);
+            subscribers.add(subscriber);
         }
     }
 
+    /**
+     * Invia un messaggio a tutti i subscribers di questo topic
+     *
+     * @param message da inviare
+     */
     public void forwardToAll(Message message) {
         synchronized (subscribersLock) {
             for (ClientHandler c : subscribers) {
@@ -75,9 +98,13 @@ public class Topic {
         }
     }
 
-    public void removeSubscriber(ClientHandler clientHandler) {
+    /**
+     * Rimuove un subscriber dall'elenco dei subscribers iscritti a questo topic
+     * @param subscriber da rimuovere
+     */
+    public void removeSubscriber(ClientHandler subscriber) {
         synchronized (subscribersLock) {
-            subscribers.remove(clientHandler);
+            subscribers.remove(subscriber);
         }
     }
 

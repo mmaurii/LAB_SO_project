@@ -13,7 +13,7 @@ public class Sender extends Thread {
     }
 
     /**
-     * Invia al ClientHandler l'input da tastiera dell'utente
+     * Rimane in attesa di messaggi dell'utente da console per inviarli al ClientHandler associato
      */
     @Override
     public void run() {
