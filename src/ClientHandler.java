@@ -68,7 +68,7 @@ public class ClientHandler implements Runnable {
                 }
 
                 // gestione comandi
-                menageCommands(command, parameter);
+                manageCommands(command, parameter);
             }
             clientPW.close();
             clientMessage.close();
@@ -97,7 +97,7 @@ public class ClientHandler implements Runnable {
      * @param command stringa contenente il nome del comando da eseguire
      * @param parameter stringa contenente eventuali parametri se necessari per command
      */
-    private void menageCommands(String command, String parameter) {
+    private void manageCommands(String command, String parameter) {
         String outMesCommandWithOutParameters = "Questo comando non accetta parametri";
         switch (command) {
             case publishCommand -> publish(parameter);
