@@ -75,7 +75,6 @@ public class ClientHandler implements Runnable {
         } catch (SocketException se) {
             //controllo se l'errore si è verificato perchè la comunicazione è stata interrotta da un comando quit
             if (isRunning()) {
-                System.err.println("ClientHandler SocketException: " + se);
                 System.out.println("Il client " + this + " si è impropriamente disconnesso");
                 System.out.println("Rilascio tutte le risorse associate al client...");
                 quit();
