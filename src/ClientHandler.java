@@ -373,7 +373,7 @@ public class ClientHandler implements Runnable {
         synchronized (runningLock) {
             running = false;
         }
-        clientPW.println("Server Disconnesso");
+        clientPW.println("Connessione al server terminata");
         closeSocket();
     }
 

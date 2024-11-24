@@ -35,7 +35,6 @@ public class Sender extends Thread {
                         break;
                     }
             }
-            System.out.println("Connessione terminata");
         } catch (IOException e) {
             System.err.println("IOException caught: " + e);
             e.printStackTrace();
