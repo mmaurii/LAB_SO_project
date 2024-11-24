@@ -31,7 +31,7 @@ public class Command {
             case "send" -> {
                 sender.sendExecute(message);
                 //notifico al client che il suo messaggio è stato inviato
-                sender.forward("Il tuo messaggio \"" + message.getTesto() +  "\" è stato inviato");
+                sender.forward("Il tuo messaggio \"" + message.getTesto() + "\" è stato inviato");
             }
         }
     }

@@ -161,7 +161,7 @@ public class Resource {
      * Aggiunge un Subscriber a un topic
      *
      * @param subscriber da iscrivere
-     * @param topic a cui iscrivere il subscriber
+     * @param topic      a cui iscrivere il subscriber
      * @return il topic a cui si è iscritto il subscriber, null se non è presente quel topic
      */
     public Topic addSubscriber(ClientHandler subscriber, Topic topic) {
@@ -222,7 +222,7 @@ public class Resource {
      *
      * @param topic su cui verificare l'uguaglianza con inspectedTopic.
      * @return Se inspectedTopic è null ritorna false.
-     *         Altrimenti ritorna il risultato dato dal metodo equals di default per la classe Topic
+     * Altrimenti ritorna il risultato dato dal metodo equals di default per la classe Topic
      */
     public boolean equalsInspectedTopic(Topic topic) {
         synchronized (inspectedObjectsLock) {

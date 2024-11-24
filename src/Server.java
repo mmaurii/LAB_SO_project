@@ -37,9 +37,9 @@ public class Server implements Runnable {
     public void run() {
         Scanner input = new Scanner(System.in);
         while (isRunning()) {
-            if (resource.inspectedTopicIsNull()){
+            if (resource.inspectedTopicIsNull()) {
                 System.out.println("\n> Inserisci comando");
-            } else{
+            } else {
                 System.out.printf("> Inserisci comando (ispezionando topic \"%s\")\n",
                         resource.getInspectedTopicTitle());
             }
@@ -71,22 +71,22 @@ public class Server implements Runnable {
     /**
      * Comandi per quando non si sta ispezionando un topic
      *
-     * @param command stringa contenente il comando, prima parte del input utente
+     * @param command   stringa contenente il comando, prima parte del input utente
      * @param parameter stringa contenente il valore per i comandi che hanno parametri
      */
     private void notInspecting(String command, String parameter) {
         switch (command) {
             case quitCommand -> {
-                if(parameter!=null){
+                if (parameter != null) {
                     System.out.println(outMesCommandWithOutParameters);
-                }else {
+                } else {
                     quit();
                 }
             }
             case showCommand -> {
-                if(parameter!=null){
+                if (parameter != null) {
                     System.out.println(outMesCommandWithOutParameters);
-                }else {
+                } else {
                     show();
                 }
             }
@@ -98,22 +98,22 @@ public class Server implements Runnable {
     /**
      * Comandi per quando si sta ispezionando un topic
      *
-     * @param command stinga contenente il comando, prima parte del input utente
+     * @param command   stinga contenente il comando, prima parte del input utente
      * @param parameter stringa contenente il valore per i comandi che hanno parametri
      */
     private void inspecting(String command, String parameter) {
         switch (command) {
             case listAllCommand -> {
-                if(parameter!=null){
+                if (parameter != null) {
                     System.out.println(outMesCommandWithOutParameters);
-                }else {
+                } else {
                     listAll();
                 }
             }
             case endCommand -> {
-                if(parameter!=null){
+                if (parameter != null) {
                     System.out.println(outMesCommandWithOutParameters);
-                }else {
+                } else {
                     end();
                 }
             }

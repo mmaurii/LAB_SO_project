@@ -93,7 +93,7 @@ public class ClientHandler implements Runnable {
      * Gestisce tutti i comandi di input che il ClientHandler può ricevere dal client associato.
      * Se un comando riceve parametri ma non sono previsti stampa un messaggio di errore a console
      *
-     * @param command stringa contenente il nome del comando da eseguire
+     * @param command   stringa contenente il nome del comando da eseguire
      * @param parameter stringa contenente eventuali parametri se necessari per command
      */
     private void manageCommands(String command, String parameter) {
@@ -104,7 +104,7 @@ public class ClientHandler implements Runnable {
             case showCommand -> {
                 if (!Objects.equals(parameter, "")) {
                     clientPW.println(outMesCommandWithOutParameters);
-                }else{
+                } else {
                     show();
                 }
             }
@@ -120,14 +120,14 @@ public class ClientHandler implements Runnable {
             case listCommand -> {
                 if (!Objects.equals(parameter, "")) {
                     clientPW.println(outMesCommandWithOutParameters);
-                }else{
+                } else {
                     list();
                 }
             }
             case listAllCommand -> {
                 if (!Objects.equals(parameter, "")) {
                     clientPW.println(outMesCommandWithOutParameters);
-                }else{
+                } else {
                     listAll();
                 }
             }

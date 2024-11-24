@@ -71,7 +71,7 @@ public class SocketListener implements Runnable {
     public synchronized void close() {
         try {
             serverSocket.close();
-        }  catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
