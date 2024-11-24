@@ -13,7 +13,6 @@ import java.util.LinkedList;
 public class SocketListener implements Runnable {
     private final Server server;
     private final ServerSocket serverSocket;
-    private final LinkedList<Thread> children = new LinkedList<>();
 
     public SocketListener(Server server, int port) {
         this.server = server;
@@ -41,7 +40,6 @@ public class SocketListener implements Runnable {
                             ClientHandler ch = new ClientHandler(clientSocket, server);
                             Thread t = new Thread(ch);
                             t.setName("ClientHandler");
-                            children.add(t);
                             t.start();
                             server.addClient(ch);
                         } else {

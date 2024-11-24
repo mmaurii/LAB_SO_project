@@ -1,7 +1,4 @@
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Questa classe viene usata per memorizzare i dati relativi alle comunicazioni sul server
@@ -17,7 +14,7 @@ public class Resource {
     //oggetto di sincronizzazione per la variabile inspectedTopic
     final Object inspectedObjectsLock = new Object();
     //Buffer per i comandi in attesa durante la fase di ispezione
-    final LinkedList<Command> commandsBuffer = new LinkedList<>();
+    final Queue<Command> commandsBuffer = new LinkedList<>();
 
     /**
      * Restituisce una stringa pronta per la stampa contenente tutti i topic presenti fin'ora sul server.
@@ -183,7 +180,7 @@ public class Resource {
      */
     public void addCommand(Command command) {
         synchronized (commandsBuffer) {
-            this.commandsBuffer.addLast(command);
+            this.commandsBuffer.add(command);
         }
     }
 
