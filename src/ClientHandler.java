@@ -73,7 +73,7 @@ public class ClientHandler implements Runnable {
             clientPW.close();
             clientMessage.close();
         } catch (SocketException se) {
-            //controllo se l'errore si è verificato perchè la comunicazione è stata interrotta da un comando quit
+            //controllo se l'errore si è verificato perché la comunicazione è stata interrotta da un comando quit
             if (isRunning()) {
                 System.out.println("Il client " + this + " si è impropriamente disconnesso");
                 System.out.println("Rilascio tutte le risorse associate al client...");
@@ -199,7 +199,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * elenca i topic presenti sul server, parameter deve essere vuoto perchè il metodo vada a buon fine
+     * Elenca i topic presenti sul server, parameter deve essere vuoto perché il metodo vada a buon fine
      */
     private void show() {
         String listOfTopics = resource.show();
@@ -215,7 +215,7 @@ public class ClientHandler implements Runnable {
      * Controlla se un comando è eseguibile dai publisher
      *
      * @param command stringa contente il nome del comando su cui fare il controllo
-     * @return true se il comando è eseguibile dai publisher, false alrimenti
+     * @return true se il comando è eseguibile dai publisher, false altrimenti
      */
     private boolean isPublisherOrSubscribeCommand(String command) {
         // false = publisher, true = subscriber
@@ -286,7 +286,7 @@ public class ClientHandler implements Runnable {
     /**
      * Invia una stringa al client associato al ClientHandler
      *
-     * @param text stringa contennete il testo da inviare al client
+     * @param text stringa contenente il testo da inviare al client
      */
     public synchronized void forward(String text) {
         clientPW.println(text);
@@ -294,7 +294,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Manda un elenco di tutti i messaggi, che il publisher associato a questo ClientHandler
-     * ha inviato su questo topic, al publier che li ha inviati.
+     * ha inviato su questo topic, al publisher che li ha inviati.
      * Se il server è in fase di ispezione mette il comando in coda per essere eseguito al termine dell'ispezione.
      */
     private void list() {
@@ -314,7 +314,7 @@ public class ClientHandler implements Runnable {
 
     /**
      * Manda un elenco di tutti i messaggi, che il publisher associato a questo ClientHandler
-     * ha inviato su questo topic, al publier che li ha inviati
+     * ha inviato su questo topic, al publisher che li ha inviati
      */
     public void listExecute() {
         StringBuilder stringBuilder;
@@ -388,7 +388,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * verifica in maniera sincrona se la variabile running è vera o falsa
+     * Verifica in maniera sincrona se la variabile running è vera o falsa
      *
      * @return true se running è vera false altrimenti
      */

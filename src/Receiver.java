@@ -28,7 +28,7 @@ public class Receiver extends Thread {
             String line;
             while ((line = from.readLine()) != null) {
                 if (line.equals(quitCommand)) {
-                    System.out.println("Il server si e' disconneso");
+                    System.out.println("Il server si è disconneso");
                     break;
                 }
                 System.out.println(line);

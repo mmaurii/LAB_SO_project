@@ -22,7 +22,6 @@ public class Client {
             }
         }
 
-
         // Gestione connessione
         try (Socket socket = new Socket(host, port)) {
             System.out.println("Connesso al server");

@@ -1,5 +1,5 @@
 /**
- * La classe MainServer prende in input le informazioni necessarie a instanziare una nuova socket TCP
+ * La classe MainServer prende in input le informazioni necessarie a istanziare una nuova socket TCP
  * e avvia un nuovo Server sulla socket specificata mettendosi poi in attesa che termini.
  */
 public class MainServer {

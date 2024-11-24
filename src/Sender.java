@@ -5,11 +5,11 @@ import java.net.Socket;
  * La classe Sender prende in input da console messaggi e comandi e li invia al server
  */
 public class Sender extends Thread {
-    Socket s;
+    Socket socket;
     private final String quitCommand = "quit";
 
-    public Sender(Socket s) {
-        this.s = s;
+    public Sender(Socket socket) {
+        this.socket = socket;
     }
 
     /**
@@ -19,7 +19,7 @@ public class Sender extends Thread {
     public void run() {
         BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
         try {
-            PrintWriter to = new PrintWriter(this.s.getOutputStream(), true);
+            PrintWriter to = new PrintWriter(this.socket.getOutputStream(), true);
             while (!Thread.interrupted()) {
                     String request = bf.readLine();
                     /*
