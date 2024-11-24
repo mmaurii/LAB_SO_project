@@ -39,7 +39,7 @@ public class Client {
 
 
             //client chiuso
-            System.out.println("client chiuso");
+            System.out.println("Client chiuso");
         } catch (IOException e) {
             System.err.println("Errore: Il server è irraggiungibile, " +
                     "riprovare cambiando host e numero di porta.");
