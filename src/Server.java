@@ -153,7 +153,7 @@ public class Server implements Runnable {
             if (topicToInspect == null) {
                 System.out.printf("Il topic %s non esiste.\n", topicName);
             } else {
-                synchronized (resource) {
+                synchronized (topicToInspect.getTitle()) {
                     // entro in fase di ispezione
                     resource.setInspectedTopic(topicToInspect);
                     System.out.printf("Ispezionando il topic: %s\n", resource.getInspectedTopicTitle());
@@ -167,7 +167,7 @@ public class Server implements Runnable {
      * Termina la fase di ispezione
      */
     private void end() {
-        synchronized (resource) {
+        synchronized (resource.getInspectedTopic().getTitle()) {
             System.out.printf("Fine ispezione del topic %s.", resource.getInspectedTopicTitle());
             //esco dalla fase di ispezione
             resource.setInspectedTopic(null);

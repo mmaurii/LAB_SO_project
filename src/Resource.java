@@ -268,4 +268,8 @@ public class Resource {
             this.clients.remove(clientHandler);
         }
     }
+
+    public Topic getInspectedTopic(){
+        return inspectedTopic;
+    }
 }

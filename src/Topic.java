@@ -56,7 +56,7 @@ public class Topic {
      *
      * @param message messaggio da aggiungere al topic
      */
-    public void addMessage(Message message) {
+    private void addMessage(Message message) {
         synchronized (messagesLock) {
             messages.add(message);
         }
@@ -94,6 +94,8 @@ public class Topic {
             for (ClientHandler c : subscribers) {
                 c.forward("Nuovo messaggio pubblicato\n" + message.toString());
             }
+
+            addMessage(message);
         }
     }
 

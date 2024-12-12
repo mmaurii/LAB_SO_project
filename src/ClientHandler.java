@@ -254,9 +254,9 @@ public class ClientHandler implements Runnable {
             } else {
                 //creo il messaggio
                 Message mess = new Message(text);
-                synchronized (resource) {
-                    //controllo se il server è in fase di ispezione
-                    // Controllo se il topic in ispezione è lo stesso del topic di questo client
+                //controllo se il server è in fase di ispezione
+                // Controllo se il topic in ispezione è lo stesso del topic di questo client
+                synchronized (topic.getTitle()) {
                     if (resource.equalsInspectedTopic(topic)) {
                         // Messaggio in attesa
                         clientPW.printf("Messaggio \"%s\" in attesa. Il server è in fase d'ispezione.\n", text);
@@ -299,14 +299,13 @@ public class ClientHandler implements Runnable {
      */
     private void list() {
         if (isPublisherOrSubscribeCommand(listCommand)) {
-            synchronized (resource) {
+            synchronized (topic.getTitle()) {
                 // Controllo se sono in ispezione e se il topic in ispezione è lo stesso del topic di questo client
                 if (resource.equalsInspectedTopic(topic)) {
                     clientPW.printf("Comando \"list\" in attesa. Il server è in fase d'ispezione.\n");
                     resource.addCommand(new Command(listCommand, this));
                     return;
                 }
-
                 listExecute();
             }
         }
@@ -341,14 +340,13 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        synchronized (resource) {
+        synchronized (topic.getTitle()) {
             // Controllo se sono in ispezione e se il topic in ispezione è lo stesso del topic di questo client
             if (resource.equalsInspectedTopic(topic)) {
                 clientPW.printf("Comando \"listall\" in attesa. Il server è in fase d'ispezione.\n");
                 resource.addCommand(new Command(listAllCommand, this));
                 return;
             }
-
             listallExecute();
         }
     }
@@ -413,14 +411,13 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Aggiunge un messaggio sia alla lista locale dei messaggi inviati
-     * dal client associato a questo ClientHandler, che a quelli presenti sul topic del publisher
+     * Aggiunge un messaggio alla lista locale dei messaggi inviati
+     * dal client associato a questo ClientHandler
      *
      * @param mess messaggio ricevuto dal client associato a questo ClientHandler
      */
     private void addMessage(Message mess) {
-        //Salva il messaggio
+        //Salva il messaggio in locale
         messages.add(mess);
-        topic.addMessage(mess);
     }
 }
